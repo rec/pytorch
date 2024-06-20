@@ -260,6 +260,7 @@ __all__ = [
     "dstack",
     "expand",
     "expand_as",
+    "expand_copy",
     "flatten",
     "flip",
     "fliplr",
@@ -273,6 +274,7 @@ __all__ = [
     "native_group_norm",
     "native_layer_norm",
     "permute",
+    "permute_copy",
     "ravel",
     "repeat",
     "reshape",
@@ -280,6 +282,7 @@ __all__ = [
     "roll",
     "rot90",
     "rsqrt",
+    "select_copy",
     "stack",
     "swap_axes",  # alias for transpose
     "squeeze",
@@ -6171,7 +6174,7 @@ def dot(self, other):
 @register_decomposition(aten.vdot)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
-    type_promoting_args=("self", "other"),
+   type_promoting_args=("self", "other"),
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT,
 )
 def vdot(self, other):
@@ -6305,9 +6308,11 @@ zero_ = _make_inplace(zero)
 alias_copy = _make_copy_from_view(alias)
 as_strided_copy = _make_copy_from_view(as_strided)
 diagonal_copy = _make_copy_from_view(diagonal)
+expand_copy = _make_copy_from_view(expand)
 # TODO: narrow_copy must return a sparse tensor if the input is sparse, but refs have
 # no sparse support. See narrow_copy_sparse in core.
 narrow_copy = _make_copy_from_view(narrow)
+permute_copy = _make_copy_from_view(permute)
 squeeze_copy = _make_copy_from_view(squeeze)
 t_copy = _make_copy_from_view(t)
 transpose_copy = _make_copy_from_view(transpose)
@@ -6315,7 +6320,18 @@ unfold_copy = _make_copy_from_view(unfold)
 unsqueeze_copy = _make_copy_from_view(unsqueeze)
 view_copy = _make_copy_from_view(view)
 
-# TODO: Decompose expand_copy, permute_copy, select_copy, unbind_copy
+# TODO: Decompose unbind_copy
+
+
+@register_decomposition(aten.select_copy)
+def select_copy(
+    t: TensorLikeType, dim: int, index: int, out: Optional[TensorLikeType] = None
+) -> TensorLikeType:
+    result = aten.select(t, dim, index)
+    if out is None:
+        return result
+    out.copy_(result)
+    return out
 
 
 # xref: isStorage in torch/csrc/DynamicTypes.cpp
