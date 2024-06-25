@@ -6174,7 +6174,7 @@ def dot(self, other):
 @register_decomposition(aten.vdot)
 @out_wrapper()
 @elementwise_type_promotion_wrapper(
-   type_promoting_args=("self", "other"),
+    type_promoting_args=("self", "other"),
     type_promotion_kind=ELEMENTWISE_TYPE_PROMOTION_KIND.DEFAULT,
 )
 def vdot(self, other):
@@ -6320,8 +6320,6 @@ unfold_copy = _make_copy_from_view(unfold)
 unsqueeze_copy = _make_copy_from_view(unsqueeze)
 view_copy = _make_copy_from_view(view)
 
-# TODO: Decompose unbind_copy
-
 
 @register_decomposition(aten.select_copy)
 def select_copy(
@@ -6331,6 +6329,22 @@ def select_copy(
     if out is None:
         return result
     out.copy_(result)
+    return out
+
+
+@register_decomposition(aten.unbind_copy)
+def unbind_copy(
+    t: TensorLikeType, dim: int = 0, out: Optional[TensorSequenceType] = None
+) -> TensorSequenceType:
+    result = unbind(t, dim)
+    if out is None:
+        return tuple(i.clone(memory_format=torch.contiguous_format) for i in result)
+    torch._check(
+        len(out) == len(result),
+        f"len(out) ({len(out)}) != len(result) ({len(result)})",
+    )
+    for o, r in zip(out, result):
+        o.copy_(r)
     return out
 
 
