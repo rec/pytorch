@@ -282,6 +282,7 @@ __all__ = [
     "roll",
     "rot90",
     "rsqrt",
+    "select_copy",
     "stack",
     "swap_axes",  # alias for transpose
     "squeeze",

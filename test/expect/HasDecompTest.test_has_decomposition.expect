@@ -1146,8 +1146,6 @@ aten::searchsorted.Tensor_out
 aten::segment_reduce
 aten::segment_reduce.out
 aten::select.int
-aten::select_copy.int
-aten::select_copy.int_out
 aten::set
 aten::set.out
 aten::set.source_Storage

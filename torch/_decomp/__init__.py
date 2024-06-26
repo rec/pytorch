@@ -403,6 +403,7 @@ def core_aten_decompositions() -> Dict[torch._ops.OperatorBase, Callable]:
             aten.rsub,
             aten._scaled_dot_product_flash_attention_for_cpu.default,
             aten.select_backward,
+            aten.select_copy,
             aten.select_scatter,
             aten.sgn,
             aten.sgn_,

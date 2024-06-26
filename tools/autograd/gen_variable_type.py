@@ -231,6 +231,7 @@ GRADIENT_IMPLEMENTED_FOR_COMPLEX = {
     "neg",
     "complex",
     "select",
+    "select_copy",
     "where",
     "as_strided",
     "as_strided_copy",
