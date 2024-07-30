@@ -179,8 +179,6 @@ _SYM_INT_OPS = {
     torch.sym_max,
     torch.sym_min,
     torch.sym_sqrt,
-    torch.ops.aten.sym_size.int,
-    torch.ops.aten.sym_stride.int,
 }
 
 
@@ -608,8 +606,11 @@ class GraphModuleSerializer(metaclass=Final):
         )
 
     def serialize_sym_op_inputs(self, op, args) -> List[NamedArgument]:
+        if isinstance(op, torch._ops.OpOverload):
+            args_names = [arg.name for arg in op._schema.arguments]
+        else:
+            args_names = list(inspect.signature(op).parameters.keys())
         serialized_args = []
-        args_names = inspect.signature(op).parameters.keys()
         for args_name, arg in zip(args_names, args):
             serialized_args.append(
                 NamedArgument(name=args_name, arg=self.serialize_input(arg))
