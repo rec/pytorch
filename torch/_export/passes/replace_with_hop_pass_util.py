@@ -171,6 +171,15 @@ def _replace_with_hop_pass_helper(
             )
             setattr(new_gm, node.target, new_subgm)
 
+    # The process of inlining nodes seems to break node.users when a node is present in
+    # multiple submodules - maybe they don't recombine properly, or some users get deleted.
+    # This causes problems for DCE when it looks up the users of a node, and incorrectly deletes them.
+    # This patches up users (assuming node.args is correct).
+    for node in new_gm.graph.nodes:
+        for arg in node.args:
+            if isinstance(arg, torch.fx.Node) and not node in arg.users:
+                arg.users[node] = None
+
     new_gm.recompile()
     new_gm.graph.lint()
     return new_gm, new_signature
