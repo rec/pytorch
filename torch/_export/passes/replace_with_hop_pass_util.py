@@ -177,7 +177,7 @@ def _replace_with_hop_pass_helper(
     # This patches up users (assuming node.args is correct).
     for node in new_gm.graph.nodes:
         for arg in node.args:
-            if isinstance(arg, torch.fx.Node) and not node in arg.users:
+            if isinstance(arg, torch.fx.Node) and node not in arg.users:
                 arg.users[node] = None
 
     new_gm.recompile()

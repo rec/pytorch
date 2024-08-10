@@ -799,6 +799,7 @@ graph():
                 actual_result.append(node.meta.get("torch_fn"))
         self.assertEqual(actual_result, expected_result)
 
+    @testing.expectedFailureSerDer  # SymInt input for HOO submodule
     def test_hoo_inline_users_issue(self):
         # This came from an issue where replace_with_hop passes would inline subgraphs,
         # and mess up node.users for nodes present in multiple subgraphs (e.g. _x in SetGradCase
@@ -811,6 +812,7 @@ graph():
                     _tuple_contains(x, val) if isinstance(x, tuple) else x == val
                     for x in _tuple
                 )
+
             for node in graph.nodes:
                 # check node.users
                 for user in node.users.keys():

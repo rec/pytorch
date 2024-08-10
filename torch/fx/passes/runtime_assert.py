@@ -197,6 +197,7 @@ def insert_deferred_runtime_asserts(
                 or _has_unsupported_sympy_function(ra.expr)
             ):
                 continue
+            print("add runtime assert", ra.expr)
 
             log.debug("inserting runtime assert %s", ra.expr)
             # Need to process ALL free symbols, not just unbacked ones
@@ -322,14 +323,16 @@ def insert_deferred_runtime_asserts(
                 if (
                     sym_expr in expr_to_proxy
                     or (  # example value is redundant
-                        _is_intermediate_tensor_sym_call(node)
+                        # _is_intermediate_tensor_sym_call(node)
+                        False
                         # shape call on intermediate tensor, turn into computation on input shapes
                         and not new_untracked_symbols
                     )
                 ) and not new_unbacked_bindings:
-                    if _is_intermediate_tensor_sym_call(
-                        node
-                    ):  # reify from input shapes
+                    # if _is_intermediate_tensor_sym_call(
+                    #     node
+                    # ):  # reify from input shapes
+                    if False:
                         expr_to_proxy[sym_expr] = _sympy_interp(expr_to_proxy, sym_expr)  # type: ignore[arg-type]
                         # won't try DCE-ing tensor compute here
                     hash_node = expr_to_proxy[sym_expr].node  # type: ignore[arg-type]
