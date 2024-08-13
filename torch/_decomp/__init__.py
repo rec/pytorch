@@ -328,6 +328,7 @@ def core_aten_decompositions() -> Dict[torch._ops.OperatorBase, Callable]:
             aten.huber_loss,
             aten.huber_loss_backward,
             aten.im2col,
+            aten._unsafe_index_put,
             aten.index_add,
             aten.index_add_,
             aten.index_copy,
