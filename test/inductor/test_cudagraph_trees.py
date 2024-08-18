@@ -1961,6 +1961,15 @@ if HAS_CUDA and not TEST_WITH_ASAN:
                 counters["inductor"]["cudagraph_recorded_non_static_inputs"], 3
             )
 
+        @torch._inductor.config.patch("cpp_wrapper", 1)
+        def test_cpp_wrapper(self):
+            def f(x):
+                return torch.sin(x)
+
+            compiled = torch.compile(f, mode="reduce-overhead")
+            print(compiled(torch.randn(10, device="cuda")))
+        
+
     instantiate_parametrized_tests(CudaGraphTreeTests)
 
 if __name__ == "__main__":
