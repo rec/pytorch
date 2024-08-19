@@ -1302,7 +1302,7 @@ def compile_fx(
                 "cpp_wrapper": False,
                 "triton.autotune_at_compile_time": True,
                 "triton.autotune_cublasLt": False,
-                "triton.cudagraphs": False,
+                "triton.cudagraphs": True,
                 "triton.store_cubin": True,
             }
         ), V.set_real_inputs(example_inputs_):
