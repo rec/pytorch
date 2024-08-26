@@ -16,6 +16,7 @@ skip:
       - OPTForCausalLM
 
   control_flow:
+    # could not guard on data-dependent expression
     - AllenaiLongformerBase
 
 batch_size:
