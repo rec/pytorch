@@ -219,6 +219,7 @@ class TensorVariable(VariableTracker):
 
     def dynamic_getattr(self, tx: "InstructionTranslator", name):
         fake_val = self.proxy.node.meta["example_value"]
+
         # For getattrs on tensors without sources,
         # we can do better than the default (creating a GetAttrVariable)
         # if:
@@ -284,6 +285,9 @@ class TensorVariable(VariableTracker):
         install_guard(attr_source.make_guard(GuardBuilder.HASATTR))
         return VariableBuilder(tx, attr_source)(real_value)
 
+    # The method_attr_* methods handle attribute read access.
+    # self.var_getattr(tx, "<attrname>") delegates to
+    # self.method_attr_<attrname>(tx), if that method exists.
     def method_attr_ndim(self, tx):
         if self.ndim is not None:
             return ConstantVariable.create(self.ndim)
@@ -373,76 +377,55 @@ class TensorVariable(VariableTracker):
         if name == "__class__":
             return UserDefinedClassVariable(self.python_type())
 
-        handler = getattr(self, f"method_attr_{name}", None)
-        result = handler(tx) if handler is not None else None
-
-        # Add a guard for type matching, these guards are checked before tensor guards
-        # In some cases, a <tensor>.<attr> guard can be evaluated first, and break if
-        # <tensor> is later changed to another type
-        if (
-            result is not None
-            and self.source
-            and self.source.subguards_allowed()
-            and not (
-                name not in ("grad", "requires_grad") and result.is_python_constant()
-            )
-        ):
-            install_guard(self.make_guard(GuardBuilder.TYPE_MATCH))
-            result.source = AttrSource(self.source, name)
-
-        # It's hard to get inplace view (metadata mutation) on graph input work properly across
-        # dynamo/aot/inductor, just fall back.
-        if self.source is not None and hasattr(torch.ops.aten, name):
-            fn = getattr(torch.ops.aten, name)
+        source = self.source and AttrSource(self.source, name)
+        attr_handler = getattr(self, f"method_attr_{name}", None)
+        if attr_handler:
+            result = attr_handler(tx)
             if (
-                hasattr(fn, "overloads")
-                and hasattr(fn, fn.overloads()[0])
-                and torch.Tag.inplace_view in getattr(fn, fn.overloads()[0]).tags
+                self.source
+                and self.source.subguards_allowed()
+                and name in ("grad", "requires_grad") or result.is_python_constant()
             ):
-                # Delay the graph break to the actual call of unsqueeze_/resize_/resize_as_ etc.
-                return variables.misc.DelayGraphBreakVariable(
-                    source=AttrSource(self.source, name)
-                )
+                # Add a guard for type matching, these guards are checked before tensor guards
+                # In some cases, a <tensor>.<attr> guard can be evaluated first, and break if
+                # <tensor> is later changed to another type
+                install_guard(self.make_guard(GuardBuilder.TYPE_MATCH))
+                result.source = source
+            return result
+
+        # It's hard to get inplace view (metadata mutation) on graph input to work properly across
+        # dynamo/aot/inductor, just fall back.
+        fn = source and getattr(torch.ops.aten, name, None)
+        overloads = fn and getattr(fn, "overloads", None)
+        default = overloads and getattr(fn, overloads()[0], None)
+        if default and torch.Tag.inplace_view in default.tags:
+            # Delay the graph break to the actual call of unsqueeze_/resize_/resize_as_ etc.
+            return variables.misc.DelayGraphBreakVariable(source=source)
 
         # For attributes (not methods) that were not caught in the special handling above,
         # (e.g. tensor.real), we handle these generically, assuming that the output type is
         # a tensor.
-        if result is None and name != "grad":
+        if name != "grad":
+            from .builder import wrap_fx_proxy
+            from .misc import GetAttrVariable
 
-            def try_generic_attr_handling():
-                from .builder import wrap_fx_proxy
-                from .misc import GetAttrVariable
+            static_attr = inspect.getattr_static(torch.Tensor, name, None)
 
-                try:
-                    static_attr = inspect.getattr_static(torch.Tensor, name)
-                except AttributeError:
-                    return None
-
-                # Make sure this is an attribute, not a method.
-                # type(torch.Tensor.H) should be "getset_descriptor"
-                # This is a because of CPython implementation, see THPVariableType:
-                # these attributes are implemented under tp_getset, which appear
-                # as `getset_descriptor`s, (compared to, say, methods which appear
-                # as `method_descriptor`s)
-                if type(static_attr) != types.GetSetDescriptorType:
-                    return None
-
+            # Make sure this is an attribute, not a method.
+            # type(torch.Tensor.H) should be "getset_descriptor"
+            # This is a because of CPython implementation, see THPVariableType:
+            # these attributes are implemented under tp_getset, which appear
+            # as `getset_descriptor`s, (compared to, say, methods which appear
+            # as `method_descriptor`s)
+            if type(static_attr) == types.GetSetDescriptorType:
                 proxy = GetAttrVariable.create_getattr_proxy(self.as_proxy(), name)
-                if self.source is not None:
-                    return wrap_fx_proxy(
-                        tx=tx, proxy=proxy, source=AttrSource(self.source, name)
-                    )
-                else:
-                    return wrap_fx_proxy(tx=tx, proxy=proxy)
+                return wrap_fx_proxy(tx=tx, proxy=proxy, source=sorce)
 
-            result = try_generic_attr_handling()
+        result = self.dynamic_getattr(tx, name)
+        if result not None:
+            return result
 
-        if result is None:
-            result = self.dynamic_getattr(tx, name)
-
-        if result is None:
-            raise NotImplementedError
-        return result
+        raise NotImplementedError
 
     def call_id(self, tx):
         if not self.source:
