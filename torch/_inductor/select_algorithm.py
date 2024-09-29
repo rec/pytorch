@@ -1416,7 +1416,6 @@ class AlgorithmSelectorCache(PersistentCache):
             return choices[0].output_node()
 
         selected_key = builtins.min(timings, key=timings.__getitem__)
-        selected_time = timings[selected_key]
         selected_choice = selected_key.output_node()
         log.debug("selected choice: %s", str(selected_choice))
         return selected_choice
@@ -1476,6 +1475,7 @@ class AlgorithmSelectorCache(PersistentCache):
         if DEBUG:
             print(f"{len(choices)} tuning requests:")
 
+        # FIXME(rec): This doesn't seem to be used
         def debug_str(example_inputs, out):
             def tensor_repr(x):
                 return (
@@ -1509,7 +1509,6 @@ class AlgorithmSelectorCache(PersistentCache):
 
         def benchmark_in_current_process(choices):
             inputs = get_inputs()
-            example_inputs, _, out, _, _ = inputs
             timings = {}
             for choice in choices:
                 try:
