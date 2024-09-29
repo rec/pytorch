@@ -117,10 +117,6 @@ class TestDependencies(InductorTestCase):
     def test_normalize_with_stride_order_equal(self):
         x = sympy_index_symbol("x")
         y = sympy_index_symbol("y")
-        var_ranges = {
-            x: 1024,
-            y: 2048,
-        }
 
         loop_order1 = MemoryDep(
             "access_the_same_buffer",
@@ -142,10 +138,6 @@ class TestDependencies(InductorTestCase):
     def test_normalize_with_stride_order_unequal(self):
         x = sympy_index_symbol("x")
         y = sympy_index_symbol("y")
-        var_ranges = {
-            x: 1024,
-            y: 2048,
-        }
 
         loop_order1 = MemoryDep(
             "access_the_same_buffer",
