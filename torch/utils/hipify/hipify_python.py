@@ -177,7 +177,7 @@ def matched_files_iter(
                 dirs.append("third_party/nvfuser")
         for filename in filenames:
             filepath = _to_unix_path(os.path.join(abs_dirpath, filename))
-            rel_filepath = _to_unix_path(os.path.join(rel_dirpath, filename))
+            _rel_filepath = _to_unix_path(os.path.join(rel_dirpath, filename))
             # We respect extensions, UNLESS you wrote the entire
             # filename verbatim, in which case we always accept it
             if (
@@ -830,7 +830,7 @@ def preprocessor(
     def mk_repl(templ, include_current_dir=True):
         def repl(m):
             f = m.group(1)
-            dirpath, filename = os.path.split(f)
+            filename = os.path.basename(f)
             if (
                 f.startswith(("ATen/cuda",
                               "ATen/native/cuda",
