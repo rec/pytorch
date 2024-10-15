@@ -503,8 +503,8 @@ class TestMessages(TestCase):
 
             # These two tests ensure that subclass creation
             # happens smoothly under the mode used by csan
-            t = TwoTensor(torch.rand(2), torch.rand(2))
-            t = MyT(torch.rand(2))
+            TwoTensor(torch.rand(2), torch.rand(2))
+            MyT(torch.rand(2))
         finally:
             csan.cuda_sanitizer.disable()
 
