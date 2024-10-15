@@ -153,10 +153,7 @@ class TestSchedulePlan(TestCase):
                 ]
 
                 schedule = ScheduleClass(stages, num_microbatches)
-                formatted_pipeline_order = _format_pipeline_order(
-                    schedule.pipeline_order
-                )
-                # print(formatted_pipeline_order)
+                _format_pipeline_order(schedule.pipeline_order)
                 _validate_pipeline_order(
                     schedule.pipeline_order, num_microbatches, num_stages
                 )
@@ -184,10 +181,7 @@ class TestSchedulePlan(TestCase):
                     for i in range(num_local_stages)
                 ]
                 schedule = ScheduleClass(stages, num_microbatches)
-                formatted_pipeline_order = _format_pipeline_order(
-                    schedule.pipeline_order
-                )
-                # print(formatted_pipeline_order)
+                _format_pipeline_order(schedule.pipeline_order)
                 _validate_pipeline_order(
                     schedule.pipeline_order,
                     num_microbatches,
