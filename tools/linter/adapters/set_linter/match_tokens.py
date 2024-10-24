@@ -1,6 +1,11 @@
-from tokenize import TokenInfo
-from typing import List, Sequence, Tuple, Iterator
+from __future__ import annotations
+
 import token
+from typing import Sequence, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from tokenize import TokenInfo
 
 EMPTY_TOKENS = {
     token.COMMENT,
@@ -12,14 +17,15 @@ EMPTY_TOKENS = {
 }
 
 
-def match_set_tokens(tokens: Sequence[TokenInfo]) -> List[TokenInfo]:
+def match_set_tokens(tokens: Sequence[TokenInfo]) -> list[TokenInfo]:
     """Matches tokens which use the built-in set"""
+
     def matches(i: int, t: TokenInfo) -> bool:
         # This is where the logic to recognize `set` goes, and # probably most bug-fixes.
 
         after = i < len(tokens) - 1 and tokens[i + 1]
         if t.string == "Set" and t.type == token.NAME:
-            return after and after.string == "[" and after.type == OP
+            return after and after.string == "[" and after.type == token.OP
         if not (t.string == "set" and t.type == token.NAME):
             return False
         if i and tokens[i - 1].string in ("def", "."):
@@ -31,7 +37,7 @@ def match_set_tokens(tokens: Sequence[TokenInfo]) -> List[TokenInfo]:
     return [t for i, t in enumerate(tokens) if matches(i, t)]
 
 
-def match_braced_sets(tokens: Sequence[TokenInfo]) -> List[List[TokenInfo]]:
+def match_braced_sets(tokens: Sequence[TokenInfo]) -> list[list[TokenInfo]]:
     braces, stack = {}, []
 
     for i, t in enumerate(tokens):
@@ -40,9 +46,9 @@ def match_braced_sets(tokens: Sequence[TokenInfo]) -> List[List[TokenInfo]]:
                 stack.append(i)
             elif inv := PAIR_INV.get(t.string):
                 begin = stack.pop()
-                assert tokens[begin].string == inv, (
-                    f"Mismatched braces '{tokens[begin].string}' and '{t.string}'"
-                )
+                assert (
+                    tokens[begin].string == inv
+                ), f"Mismatched braces '{tokens[begin].string}' and '{t.string}'"
                 braces[begin] = i
 
     assert not stack, f"Unbalanced '{tokens[stack[-1]].string}'"
@@ -63,7 +69,7 @@ def match_braced_sets(tokens: Sequence[TokenInfo]) -> List[List[TokenInfo]]:
                 is_set = True
         return is_set
 
-    return [tokens[b:e + 1] for b, e in sorted(braces.items()) if is_set(b, e)]
+    return [tokens[b : e + 1] for b, e in sorted(braces.items()) if is_set(b, e)]
 
 
 PAIR = {

@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 from itertools import product
 from pathlib import Path
 from token import NAME
-from tokenize import TokenInfo, generate_tokens
-from typing import List, Tuple
+from tokenize import generate_tokens, TokenInfo
 
 import pytest
 from tools.linter.adapters.set_linter.fix_set_tokens import fix_set_tokens
-from tools.linter.adapters.set_linter.python_file import OmittedLines, PythonFile
-from tools.linter.adapters.set_linter.match_tokens import match_braced_sets
+from tools.linter.adapters.set_linter.python_file import PythonFile
+
 
 TESTDATA = Path(__file__).parent / "set_linter_testdata"
 
@@ -32,21 +33,22 @@ def test_omitted_lines() -> None:
     assert expected == actual
 
 
-def _match_braced_sets(s: str) -> List[List[TokenInfo]]:
+def _match_braced_sets(s: str) -> list[list[TokenInfo]]:
     tokens = list(generate_tokens())
 
 
 # def test_match_braced_sets() -> None:
 
 
-
-@pytest.mark.parametrize("filename, add_any", product(FILENAMES, (False, True)))
+@pytest.mark.parametrize(("filename", "add_any"), product(FILENAMES, (False, True)))
 def test_fix_set_token(filename: Path, add_any: bool) -> None:
     actual, expected = _fix_set_tokens(filename, add_any)
     assert actual == expected
 
 
-def _fix_set_tokens(filename: Path, add_any: bool = False) -> Tuple[List[str], List[str]]:
+def _fix_set_tokens(
+    filename: Path, add_any: bool = False
+) -> tuple[list[str], list[str]]:
     pf = PythonFile.create(filename)
     fix_set_tokens(pf, add_any)
     expected_file = Path(f"{filename}{'.add_any' * add_any}.expected")

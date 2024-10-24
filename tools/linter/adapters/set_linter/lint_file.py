@@ -1,9 +1,14 @@
-from argparse import Namespace
-from pathlib import Path
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
 
 from .fix_set_tokens import fix_set_tokens
 from .python_file import PythonFile
+
+
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from pathlib import Path
 
 
 WINDOW = 5
@@ -22,7 +27,7 @@ def lint_file(filename: Path, args: Namespace) -> None:
     if args.verbose:
         print(filename, "Reading")
 
-    pf = PythonFile::create(filename)
+    pf = PythonFile.create(filename)
     if not pf.set_tokens:
         if args.verbose:
             print(filename, "OK")

@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 import token
-from pathlib import Path
-from tokenize import TokenInfo
 import tokenize
-from typing import List, Sequence
+from tokenize import TokenInfo
+from typing import Sequence, TYPE_CHECKING
 
 from .match_tokens import match_set_tokens
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 OMIT_COMMENT = "# noqa: set_linter"
@@ -17,23 +21,24 @@ will have to be in a NAME token, and we're only care about enough context to see
 really `set` or, say, a method `set`.
 """
 
-def split_lines(lines: Sequence[str]) -> List[str]:
+
+def split_lines(lines: Sequence[str]) -> list[str]:
     return [s for i in lines for s in i.splitlines(keepends=True)]
 
 
-def generate_tokens(lines: Sequence[str]) -> List[TokenInfo]:
+def generate_tokens(lines: Sequence[str]) -> list[TokenInfo]:
     return list(tokenize.generate_tokens(iter(lines).__next__))
 
 
 class PythonFile:
     path: Path
-    lines: List[str]
-    tokens: List[TokenInfo]
-    token_lines: List[List[TokenInfo]]
-    set_tokens: List[TokenInfo]
+    lines: list[str]
+    tokens: list[TokenInfo]
+    token_lines: list[list[TokenInfo]]
+    set_tokens: list[TokenInfo]
 
     @staticmethod
-    def create(path: Path) -> 'PythonFile':
+    def create(path: Path) -> PythonFile:
         return PythonFile(path.read_text())
 
     def __init__(self, *lines: str) -> None:
@@ -52,11 +57,13 @@ class PythonFile:
 
 
 class OmittedLines:
-    def __init__(self, lines: List[str]) -> None:
+    def __init__(self, lines: list[str]) -> None:
         self.lines = lines
-        self.omitted = {i + 1 for i, s in enumerate(lines) if s.rstrip().endswith(OMIT_COMMENT)}
+        self.omitted = {
+            i + 1 for i, s in enumerate(lines) if s.rstrip().endswith(OMIT_COMMENT)
+        }
 
-    def __call__(self, tokens: List[TokenInfo]) -> bool:
+    def __call__(self, tokens: list[TokenInfo]) -> bool:
         # A token_line might span multiple physical lines
         lines = sorted(i for t in tokens for i in (t.start[0], t.end[0]))
         lines_covered = list(range(lines[0], lines[-1] + 1)) if lines else []

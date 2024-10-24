@@ -1,6 +1,11 @@
-from token import COMMENT, INDENT, NAME
+from __future__ import annotations
 
-from .python_file import PythonFile
+import token
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .python_file import PythonFile
 
 
 IMPORT_LINE = "from torch.utils._ordered_set import OrderedSet\n"
@@ -33,15 +38,17 @@ def _add_import(pf: PythonFile) -> None:
 
     for token_line in pf.token_lines:
         t = token_line[0]
-        if t.type == INDENT:
+        if t.type == token.INDENT:
             DEBUG and print("INDENT", token_line)
             break
-        elif t.type == COMMENT:
+        elif t.type == token.COMMENT:
             DEBUG and print("COMMENT", token_line)
             comments.append(token_line)
-        elif t.type == NAME and t.string in ("from", "import"):
+        elif t.type == token.NAME and t.string in ("from", "import"):
             DEBUG and print("import", token_line)
-            if any(i.type == NAME and i.string == "OrderedSet" for i in token_line):
+            if any(
+                i.type == token.NAME and i.string == "OrderedSet" for i in token_line
+            ):
                 return
             elif t.string == "from":
                 froms.append(token_line)
