@@ -58,6 +58,7 @@ from .dicts import (
     is_hashable,
     SetVariable,
 )
+from .functions import UserFunctionVariable
 from .lists import (
     BaseListVariable,
     ListIteratorVariable,
@@ -1675,11 +1676,10 @@ class BuiltinVariable(VariableTracker):
             "__module__",
         ):
             return ConstantVariable.create(getattr(obj.fn, name))
+        elif istype(obj, UserFunctionVariable) and name in ("__name__", "__module__"):
+            return ConstantVariable.create(getattr(obj.fn, name))
         else:
-            try:
-                return obj.var_getattr(tx, name)
-            except NotImplementedError:
-                return variables.GetAttrVariable(obj, name, source=source)
+            return obj.var_getattr(tx, name)
 
     def call_setattr(
         self,
