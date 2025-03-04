@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from tokenize import TokenInfo
 
 
-GRANDFATHER_LIST = Path(str(_FILE).replace(".py", "-grandfather.json"))
+GRANDFATHER_LIST = Path(str(_FILE / "_linter").replace(".py", "-grandfather.json"))
 
 # We tolerate a 10% increase in block size before demanding a docstring
 TOLERANCE_PERCENT = 10

@@ -32,7 +32,7 @@ EMPTY_TOKENS = START_OF_LINE_TOKENS | IGNORED_TOKENS
 BRACKETS = {"{": "}", "(": ")", "[": "]"}
 BRACKETS_INV = {j: i for i, j in BRACKETS.items()}
 
-ROOT = Path(__file__).absolute().parents[3]
+ROOT = Path(__file__).absolute().parents[4]
 assert ROOT.name == "pytorch", (
     f"{sys.argv[0]} must be called from the root directory of pytorch"
 )
