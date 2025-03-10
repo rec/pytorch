@@ -7,36 +7,12 @@ from tokenize import generate_tokens, TokenInfo
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 
-from . import NO_TOKEN, ROOT
+from . import EMPTY_TOKENS, NO_TOKEN, ParseError, ROOT
+from .block import Block
 
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-
-class OmittedLines:
-    """Read lines textually and find comment lines that end in 'noqa {linter_name}'"""
-
-    omitted: set[int]
-
-    def __init__(self, lines: Sequence[str], linter_name: str) -> None:
-        self.lines = lines
-        suffix = f"# noqa: {linter_name}"
-        omitted = ((i, s.rstrip()) for i, s in enumerate(lines))
-        self.omitted = {i + 1 for i, s in omitted if s.endswith(suffix)}
-
-    def __call__(
-        self, tokens: Sequence[TokenInfo], begin: int = 0, end: int = NO_TOKEN
-    ) -> bool:
-        if end == NO_TOKEN:
-            end = len(tokens)
-        # A token_line might span multiple physical lines
-        start = min((tokens[i].start[0] for i in range(begin, end)), default=0)
-        end = max((tokens[i].end[0] for i in range(begin, end)), default=-1)
-        return self.contains_lines(start, end)
-
-    def contains_lines(self, begin: int, end: int) -> bool:
-        return bool(self.omitted.intersection(range(begin, end + 1)))
 
 
 class PythonFile:
@@ -111,3 +87,138 @@ class PythonFile:
         """The number of comments at the very top of the file."""
         it = (i for i, s in enumerate(self.lines) if not s.startswith("#"))
         return next(it, 0)
+
+    def __getitem__(self, i: int | slice) -> TokenInfo | Sequence[TokenInfo]:
+        return self.tokens[i]
+
+    def next_token(self, start: int, token_type: int, error: str) -> int:
+        for i in range(start, len(self.tokens)):
+            if self.tokens[i].type == token_type:
+                return i
+        raise ParseError(self.tokens[-1], error)
+
+    def docstring(self, start: int) -> str:
+        for i in range(start + 1, len(self.tokens)):
+            tk = self.tokens[i]
+            if tk.type == token.STRING:
+                return tk.string
+            if tk.type not in EMPTY_TOKENS:
+                return ""
+        return ""
+
+    @cached_property
+    def indent_to_dedent(self) -> dict[int, int]:
+        dedents = dict[int, int]()
+        stack = list[int]()
+
+        for i, t in enumerate(self.tokens):
+            if t.type == token.INDENT:
+                stack.append(i)
+            elif t.type == token.DEDENT:
+                dedents[stack.pop()] = i
+
+        return dedents
+
+    @cached_property
+    def errors(self) -> dict[str, str]:
+        return {}
+
+    @cached_property
+    def blocks(self) -> list[Block]:
+        blocks: list[Block] = []
+
+        for i in range(len(self.tokens)):
+            try:
+                if (b := self.block(i)) is not None:
+                    blocks.append(b)
+            except ParseError as e:
+                self.errors[e.token.line] = " ".join(e.args)
+
+        for i, parent in enumerate(blocks):
+            for j in range(i + 1, len(blocks)):
+                if parent.contains(child := blocks[j]):
+                    child.parent = i
+                    parent.children.append(j)
+                else:
+                    break
+
+        for i, b in enumerate(blocks):
+            b.index = i
+
+            parents = [b]
+            while (p := parents[-1].parent) is not None:
+                parents.append(blocks[p])
+            parents = parents[1:]
+
+            b.is_local = not all(p.is_class for p in parents)
+            b.is_method = not b.is_class and bool(parents) and parents[0].is_class
+
+        def add_full_names(children: Sequence[Block], prefix: str = "") -> None:
+            dupes: dict[str, list[Block]] = {}
+            for b in children:
+                dupes.setdefault(b.name, []).append(b)
+
+            for dl in dupes.values():
+                for i, b in enumerate(dl):
+                    suffix = f"[{i + 1}]" if len(dl) > 1 else ""
+                    b.full_name = prefix + b.name + suffix
+
+            for b in children:
+                if kids := [blocks[i] for i in b.children]:
+                    add_full_names(kids, b.full_name + ".")
+
+        add_full_names([b for b in blocks if b.parent is None])
+        return blocks
+
+    def block(self, begin: int) -> Block | None:
+        t = self.tokens[begin]
+        if not (t.type == token.NAME and t.string in ("class", "def")):
+            return None
+
+        category = Block.Category[t.string.upper()]
+        try:
+            ni = self.next_token(begin + 1, token.NAME, "Definition but no name")
+            name = self.tokens[ni].string
+            indent = self.next_token(ni + 1, token.INDENT, "Definition but no indent")
+            dedent = self.indent_to_dedent[indent]
+            docstring = self.docstring(indent)
+        except ParseError:
+            name = "(ParseError)"
+            indent = -1
+            dedent = -1
+            docstring = ""
+
+        return Block(
+            begin=begin,
+            category=category,
+            dedent=dedent,
+            docstring=docstring,
+            indent=indent,
+            name=name,
+            tokens=self.tokens,
+        )
+
+
+class OmittedLines:
+    """Read lines textually and find comment lines that end in 'noqa {linter_name}'"""
+
+    omitted: set[int]
+
+    def __init__(self, lines: Sequence[str], linter_name: str) -> None:
+        self.lines = lines
+        suffix = f"# noqa: {linter_name}"
+        omitted = ((i, s.rstrip()) for i, s in enumerate(lines))
+        self.omitted = {i + 1 for i, s in omitted if s.endswith(suffix)}
+
+    def __call__(
+        self, tokens: Sequence[TokenInfo], begin: int = 0, end: int = NO_TOKEN
+    ) -> bool:
+        if end == NO_TOKEN:
+            end = len(tokens)
+        # A token_line might span multiple physical lines
+        start = min((tokens[i].start[0] for i in range(begin, end)), default=0)
+        end = max((tokens[i].end[0] for i in range(begin, end)), default=-1)
+        return self.contains_lines(start, end)
+
+    def contains_lines(self, begin: int, end: int) -> bool:
+        return bool(self.omitted.intersection(range(begin, end + 1)))

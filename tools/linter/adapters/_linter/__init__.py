@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    "Block",
     "bracket_pairs",
     "EMPTY_TOKENS",
     "FileLinter",
@@ -38,6 +39,7 @@ START_OF_LINE_TOKENS = {token.DEDENT, token.INDENT, token.NEWLINE}
 IGNORED_TOKENS = {token.COMMENT, token.ENDMARKER, token.ENCODING, token.NL}
 EMPTY_TOKENS = START_OF_LINE_TOKENS | IGNORED_TOKENS
 
+
 ROOT = Path(__file__).absolute().parents[4]
 assert ROOT.name == "pytorch", (
     f"{sys.argv[0]} must be called from the root directory of pytorch"
@@ -50,6 +52,7 @@ class ParseError(ValueError):
         self.token = token
 
 
+from .block import Block
 from .bracket_pairs import bracket_pairs
 from .file_linter import FileLinter
 from .messages import LintResult

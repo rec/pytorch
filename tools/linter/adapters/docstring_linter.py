@@ -3,7 +3,6 @@ from __future__ import annotations
 import itertools
 import json
 import sys
-import token
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
@@ -14,14 +13,11 @@ _PATH = [Path(p).absolute() for p in sys.path]
 
 if TYPE_CHECKING or _FILE.parent not in _PATH:
     from . import _linter
-    from ._linter.block import Block
 else:
     import _linter
-    from _linter.block import Block
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-    from tokenize import TokenInfo
 
 
 GRANDFATHER_LIST = Path(str(_FILE / "_linter").replace(".py", "-grandfather.json"))
@@ -39,119 +35,7 @@ DESCRIPTION = """`docstring_linter` reports on long functions, methods or classe
 without docstrings"""
 
 
-class DocstringFile(_linter.PythonFile):
-    def __getitem__(self, i: int | slice) -> TokenInfo | Sequence[TokenInfo]:
-        return self.tokens[i]
-
-    def next_token(self, start: int, token_type: int, error: str) -> int:
-        for i in range(start, len(self.tokens)):
-            if self.tokens[i].type == token_type:
-                return i
-        raise _linter.ParseError(self.tokens[-1], error)
-
-    def docstring(self, start: int) -> str:
-        for i in range(start + 1, len(self.tokens)):
-            tk = self.tokens[i]
-            if tk.type == token.STRING:
-                return tk.string
-            if tk.type not in _linter.EMPTY_TOKENS:
-                return ""
-        return ""
-
-    @cached_property
-    def indent_to_dedent(self) -> dict[int, int]:
-        dedents = dict[int, int]()
-        stack = list[int]()
-
-        for i, t in enumerate(self.tokens):
-            if t.type == token.INDENT:
-                stack.append(i)
-            elif t.type == token.DEDENT:
-                dedents[stack.pop()] = i
-
-        return dedents
-
-    @cached_property
-    def errors(self) -> dict[str, str]:
-        return {}
-
-    @cached_property
-    def blocks(self) -> list[Block]:
-        blocks: list[Block] = []
-
-        for i in range(len(self.tokens)):
-            try:
-                if (b := self.block(i)) is not None:
-                    blocks.append(b)
-            except _linter.ParseError as e:
-                self.errors[e.token.line] = " ".join(e.args)
-
-        for i, parent in enumerate(blocks):
-            for j in range(i + 1, len(blocks)):
-                if parent.contains(child := blocks[j]):
-                    child.parent = i
-                    parent.children.append(j)
-                else:
-                    break
-
-        for i, b in enumerate(blocks):
-            b.index = i
-
-            parents = [b]
-            while (p := parents[-1].parent) is not None:
-                parents.append(blocks[p])
-            parents = parents[1:]
-
-            b.is_local = not all(p.is_class for p in parents)
-            b.is_method = not b.is_class and bool(parents) and parents[0].is_class
-
-        def add_full_names(children: Sequence[Block], prefix: str = "") -> None:
-            dupes: dict[str, list[Block]] = {}
-            for b in children:
-                dupes.setdefault(b.name, []).append(b)
-
-            for dl in dupes.values():
-                for i, b in enumerate(dl):
-                    suffix = f"[{i + 1}]" if len(dl) > 1 else ""
-                    b.full_name = prefix + b.name + suffix
-
-            for b in children:
-                if kids := [blocks[i] for i in b.children]:
-                    add_full_names(kids, b.full_name + ".")
-
-        add_full_names([b for b in blocks if b.parent is None])
-        return blocks
-
-    def block(self, begin: int) -> Block | None:
-        t = self.tokens[begin]
-        if not (t.type == token.NAME and t.string in ("class", "def")):
-            return None
-
-        category = Block.Category[t.string.upper()]
-        try:
-            ni = self.next_token(begin + 1, token.NAME, "Definition but no name")
-            name = self.tokens[ni].string
-            indent = self.next_token(ni + 1, token.INDENT, "Definition but no indent")
-            dedent = self.indent_to_dedent[indent]
-            docstring = self.docstring(indent)
-        except _linter.ParseError:
-            name = "(ParseError)"
-            indent = -1
-            dedent = -1
-            docstring = ""
-
-        return Block(
-            begin=begin,
-            category=category,
-            dedent=dedent,
-            docstring=docstring,
-            indent=indent,
-            name=name,
-            tokens=self.tokens,
-        )
-
-
-class DocstringLinter(_linter.FileLinter[DocstringFile]):
+class DocstringLinter(_linter.FileLinter[_linter.PythonFile]):
     linter_name = "docstring_linter"
     description = DESCRIPTION
     is_fixer = False
@@ -171,26 +55,26 @@ class DocstringLinter(_linter.FileLinter[DocstringFile]):
         self._write_grandfather()
         return success
 
-    def _lint(self, df: DocstringFile) -> Iterator[_linter.LintResult]:
-        if (p := str(df.path)) in self.path_to_blocks:
+    def _lint(self, pf: _linter.PythonFile) -> Iterator[_linter.LintResult]:
+        if (p := str(pf.path)) in self.path_to_blocks:
             print("Repeated file", p, file=sys.stderr)
             return
 
-        blocks = df.blocks
-        bad = {b for b in blocks if self._is_bad_block(b, df)}
+        blocks = pf.blocks
+        bad = {b for b in blocks if self._is_bad_block(b, pf)}
         bad = self._dont_require_constructor_and_class_docs(blocks, bad)
-        gf = self._grandfathered(df.path, bad)
+        gf = self._grandfathered(pf.path, bad)
 
-        yield from (self._block_result(b, df) for b in sorted(bad - gf))
+        yield from (self._block_result(b, pf) for b in sorted(bad - gf))
 
-        def as_data(b: Block) -> dict[str, Any]:
+        def as_data(b: _linter.Block) -> dict[str, Any]:
             status = "grandfather" if b in gf else "bad" if b in bad else "good"
             return {"status": status, **b.as_data()}
 
         self.path_to_blocks[p] = [as_data(b) for b in blocks]
 
-    def _error(self, df: DocstringFile, result: _linter.LintResult) -> None:
-        self.path_to_errors[str(df.path)] = [{str(result.line): result.name}]
+    def _error(self, pf: _linter.PythonFile, result: _linter.LintResult) -> None:
+        self.path_to_errors[str(pf.path)] = [{str(result.line): result.name}]
 
     @cached_property
     def _grandfather(self) -> dict[str, dict[str, Any]]:
@@ -207,43 +91,47 @@ class DocstringLinter(_linter.FileLinter[DocstringFile]):
     def _max_lines(self) -> dict[str, int]:
         return {"class": self.args.max_class, "def": self.args.max_def}
 
-    def _grandfathered(self, path: Path | None, bad: set[Block]) -> set[Block]:
+    def _grandfathered(
+        self, path: Path | None, bad: set[_linter.Block]
+    ) -> set[_linter.Block]:
         if path is None or self.args.no_grandfather or self.args.write_grandfather:
             return set()
 
         grand: dict[str, int] = self._grandfather.get(str(path), {})
         tolerance_ratio = 1 + self.args.grandfather_tolerance / 100.0
 
-        def grandfathered(b: Block) -> bool:
+        def grandfathered(b: _linter.Block) -> bool:
             lines = int(grand.get(b.display_name, 0) * tolerance_ratio)
             return b.line_count <= lines
 
         return {b for b in bad if grandfathered(b)}
 
-    def _block_result(self, b: Block, df: DocstringFile) -> _linter.LintResult:
+    def _block_result(
+        self, b: _linter.Block, pf: _linter.PythonFile
+    ) -> _linter.LintResult:
         def_name = "function" if b.category == "def" else "class"
         msg = f"docstring found for {def_name} '{b.name}' ({b.line_count} lines)"
         if len(b.docstring):
             msg = msg + f" was too short ({len(b.docstring)} characters)"
         else:
             msg = "No " + msg
-        return _linter.LintResult(msg, *df.tokens[b.begin].start)
+        return _linter.LintResult(msg, *pf.tokens[b.begin].start)
 
     def _display(
-        self, df: DocstringFile, results: list[_linter.LintResult]
+        self, pf: _linter.PythonFile, results: list[_linter.LintResult]
     ) -> Iterator[str]:
         if not self.args.report:
-            yield from super()._display(df, results)
+            yield from super()._display(pf, results)
 
     def _dont_require_constructor_and_class_docs(
-        self, blocks: Sequence[Block], bad: set[Block]
-    ) -> set[Block]:
+        self, blocks: Sequence[_linter.Block], bad: set[_linter.Block]
+    ) -> set[_linter.Block]:
         if self.args.lint_init:
             return bad
 
         good = {b for b in blocks if len(b.docstring) >= self.args.min_docstring}
 
-        def has_class_init_doc(b: Block) -> bool:
+        def has_class_init_doc(b: _linter.Block) -> bool:
             if b.is_class:
                 # Is it a class whose constructor is documented?
                 children = (blocks[i] for i in b.children)
@@ -254,10 +142,10 @@ class DocstringLinter(_linter.FileLinter[DocstringFile]):
 
         return {b for b in bad if not has_class_init_doc(b)}
 
-    def _is_bad_block(self, b: Block, df: DocstringFile) -> bool:
+    def _is_bad_block(self, b: _linter.Block, pf: _linter.PythonFile) -> bool:
         max_lines = self._max_lines[b.category]
         return (
-            not df.omitted(df.tokens, b.begin, b.dedent)
+            not pf.omitted(pf.tokens, b.begin, b.dedent)
             and b.line_count > max_lines
             and len(b.docstring) < self.args.min_docstring
             and (self.args.lint_local or not b.is_local)
