@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from . import EMPTY_TOKENS, NO_TOKEN, ParseError, ROOT
 from .block import Block
+from .sets import LineWithSets
 
 
 if TYPE_CHECKING:
@@ -122,6 +123,31 @@ class PythonFile:
     @cached_property
     def errors(self) -> dict[str, str]:
         return {}
+
+    @cached_property
+    def braced_sets(self) -> list[Sequence[TokenInfo]]:
+        lines = [t for tl in self._lines_with_sets for t in tl.braced_sets]
+        return [s for s in lines if not self.omitted(s)]
+
+    @cached_property
+    def sets(self) -> list[TokenInfo]:
+        tokens = [t for tl in self._lines_with_sets for t in tl.sets]
+        return [t for t in tokens if not self.omitted([t])]
+
+    @cached_property
+    def insert_import_line(self) -> int | None:
+        froms, imports = self.import_lines
+        for i in froms + imports:
+            tl = self.token_lines[i]
+            if any(i.type == token.NAME and i.string == "OrderedSet" for i in tl):
+                return None
+        if section := froms or imports:
+            return self._lines_with_sets[section[-1]].tokens[-1].start[0] + 1
+        return self.opening_comment_lines + 1
+
+    @cached_property
+    def _lines_with_sets(self) -> list[LineWithSets]:
+        return [LineWithSets(tl) for tl in self.token_lines]
 
     @cached_property
     def blocks(self) -> list[Block]:

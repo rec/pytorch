@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import sys
-import token
-from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,8 +14,7 @@ else:
     import _linter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-    from tokenize import TokenInfo
+    from collections.abc import Iterator
 
 
 ERROR = "Builtin `set` is deprecated"
@@ -72,49 +69,22 @@ tuple is more time-efficient than an OrderedSet and also has less visual clutter
 """
 
 
-class SetFile(_linter.PythonFile):
-    @cached_property
-    def braced_sets(self) -> list[Sequence[TokenInfo]]:
-        lines = [t for tl in self._lines_with_sets for t in tl.braced_sets]
-        return [s for s in lines if not self.omitted(s)]
-
-    @cached_property
-    def sets(self) -> list[TokenInfo]:
-        tokens = [t for tl in self._lines_with_sets for t in tl.sets]
-        return [t for t in tokens if not self.omitted([t])]
-
-    @cached_property
-    def insert_import_line(self) -> int | None:
-        froms, imports = self.import_lines
-        for i in froms + imports:
-            tl = self.token_lines[i]
-            if any(i.type == token.NAME and i.string == "OrderedSet" for i in tl):
-                return None
-        if section := froms or imports:
-            return self._lines_with_sets[section[-1]].tokens[-1].start[0] + 1
-        return self.opening_comment_lines + 1
-
-    @cached_property
-    def _lines_with_sets(self) -> list[_linter.LineWithSets]:
-        return [_linter.LineWithSets(tl) for tl in self.token_lines]
-
-
-class SetLinter(_linter.FileLinter[SetFile]):
+class SetLinter(_linter.FileLinter[_linter.PythonFile]):
     linter_name = "set_linter"
     description = DESCRIPTION
     epilog = EPILOG
     report_column_numbers = True
 
-    def _lint(self, sf: SetFile) -> Iterator[_linter.LintResult]:
-        if (sf.sets or sf.braced_sets) and (ins := sf.insert_import_line) is not None:
+    def _lint(self, pf: _linter.PythonFile) -> Iterator[_linter.LintResult]:
+        if (pf.sets or pf.braced_sets) and (ins := pf.insert_import_line) is not None:
             yield _linter.LintResult(
                 "Add import for OrderedSet", ins, 0, IMPORT_LINE, 0
             )
-        for b in sf.braced_sets:
+        for b in pf.braced_sets:
             yield _linter.LintResult(ERROR, *b[0].start, "OrderedSet([", 1)
             yield _linter.LintResult(ERROR, *b[-1].start, "])", 1)
 
-        for s in sf.sets:
+        for s in pf.sets:
             yield _linter.LintResult(ERROR, *s.start, "OrderedSet", 3)
 
 
