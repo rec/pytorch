@@ -26,6 +26,7 @@ __all__ = (
     "bracket_pairs",
     "EMPTY_TOKENS",
     "FileLinter",
+    "LineWithSets",
     "LintResult",
     "ParseError",
     "PythonFile",
@@ -57,3 +58,4 @@ from .bracket_pairs import bracket_pairs
 from .file_linter import FileLinter
 from .messages import LintResult
 from .python_file import PythonFile
+from .sets import LineWithSets
