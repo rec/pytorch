@@ -35,7 +35,7 @@ DESCRIPTION = """`docstring_linter` reports on long functions, methods or classe
 without docstrings"""
 
 
-class DocstringLinter(_linter.FileLinter[_linter.PythonFile]):
+class DocstringLinter(_linter.FileLinter):
     linter_name = "docstring_linter"
     description = DESCRIPTION
     is_fixer = False

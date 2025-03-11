@@ -69,7 +69,7 @@ tuple is more time-efficient than an OrderedSet and also has less visual clutter
 """
 
 
-class SetLinter(_linter.FileLinter[_linter.PythonFile]):
+class SetLinter(_linter.FileLinter):
     linter_name = "set_linter"
     description = DESCRIPTION
     epilog = EPILOG
