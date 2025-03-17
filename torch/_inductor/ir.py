@@ -4943,12 +4943,14 @@ class ConcatKernel(NopKernel):
                 for s1, s2 in zip(src.get_stride(), dst.get_stride())
             )
 
-        return isinstance(src.data.layout, FlexibleLayout) and not isinstance(
-            src.data, ExternKernelAlloc
+        return (
+            hasattr(src.data, "layout")
+            and isinstance(src.data.layout, FlexibleLayout)
+            and not isinstance(src.data, ExternKernelAlloc)
         )
 
     @classmethod
-    def realize_into(cls, src, dst):  # type: ignore[no-untyped-def]
+    def realize_into(cls, src: IRNode, dst: IRNode) -> IRNode:
         # Attempt to turn this into a ReinterpretView rather than assert.
         # This has concessions around layout, as as_storage_and_layout
         # can cause us to go from flexible to fixed layout.
@@ -4956,7 +4958,7 @@ class ConcatKernel(NopKernel):
             if is_storage_and_layout(dst):
                 storage, layout = as_storage_and_layout(dst)
                 dst = ReinterpretView(data=storage, layout=layout)
-        assert isinstance(dst, ReinterpretView), dst
+        assert isinstance(dst, ReinterpretView), type(dst)
         if isinstance(src, TensorBox):
             # unwrap a TensorBox
             return cls.realize_into(src.data, dst)
@@ -4986,7 +4988,7 @@ class ConcatKernel(NopKernel):
 
 @ir_dataclass(frozen=False)
 class ExternKernel(InputsKernel):
-    constant_args: tuple[Any, ...] = ()
+    constant_args: Sequence[Any] = ()
     kwargs: dict[str, Any] = dataclasses.field(default_factory=dict)
     output_view: Optional[ReinterpretView] = None
     python_kernel_name: Optional[str] = None
@@ -4996,28 +4998,29 @@ class ExternKernel(InputsKernel):
     ordered_kwargs_for_cpp_kernel: Iterable[str] = dataclasses.field(
         default_factory=list
     )
-    op_overload: Optional[
-        Union[torch._ops.OpOverload, torch._ops.HigherOrderOperator]
-    ] = None
+    op_overload: Optional[_OpOverloads] = None
     arg_properties: Optional[list[dict[str, Any]]] = None
+    allarg_properties: dict[str, dict[str, Any]] = dataclasses.field(
+        default_factory=dict
+    )
     kwarg_properties: Optional[dict[str, dict[str, Any]]] = None
     unbacked_bindings: dict[sympy.Symbol, pytree.KeyPath] = dataclasses.field(
         default_factory=dict
     )
     mutation_outputs: list[MutationOutput] = dataclasses.field(default_factory=list)
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(
         self,
-        name,
-        layout,
-        inputs,
-        constant_args=(),
-        kwargs=None,
-        output_view=None,
-        python_kernel_name=None,
-        cpp_kernel_name=None,
-        ordered_kwargs_for_cpp_kernel=(),
-        op_overload=None,
+        name: Optional[str],
+        layout: OutputSpec,
+        inputs: Sequence[Union[IRNode, Sequence[IRNode]]],
+        constant_args: Sequence[Any] = (),
+        kwargs: Optional[dict[str, Any]] = None,
+        output_view: Optional[ReinterpretView] = None,
+        python_kernel_name: Optional[str] = None,
+        cpp_kernel_name: Optional[str] = None,
+        ordered_kwargs_for_cpp_kernel: Iterable[str] = (),
+        op_overload: Optional[_OpOverloads] = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -5042,7 +5045,7 @@ class ExternKernel(InputsKernel):
     def get_unbacked_symbol_defs(self) -> OrderedSet[sympy.Symbol]:
         return OrderedSet()
 
-    def collect_arg_kwarg_properties(self):  # type: ignore[no-untyped-def]
+    def collect_arg_kwarg_properties(self) -> None:
         # if self.op_overload is torch._ops.OpOverload, we can use its schema to collect additional
         # information for args and kwargs, e.g. type and default value, to help with the cpp wrapper codegen
         self.arg_properties = (
@@ -5077,17 +5080,17 @@ class ExternKernel(InputsKernel):
                 x for x in self.op_overload._schema.arguments if x.kwarg_only
             ]
 
-    def decide_layout(self):  # type: ignore[no-untyped-def]
+    def decide_layout(self) -> None:
         if isinstance(self.layout, FlexibleLayout):
             self.apply_constraint()
             self.freeze_layout()
 
-    def codegen_comment(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen_comment(self, wrapper: PythonWrapperCodegen) -> None:
         origin_str, _detailed_origin_str = get_kernel_metadata(self, wrapper)
         if origin_str:
             wrapper.writeline(origin_str)
 
-    def codegen(self, wrapper):  # type: ignore[no-untyped-def]
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
         raise NotImplementedError
 
     def set_cpp_kernel_name(self, cpp_kernel_name: Optional[str] = None) -> None:
@@ -5129,16 +5132,24 @@ class ExternKernel(InputsKernel):
                 f"{kernel.__module__.replace('._ops.', '.ops.')}.{kernel.__name__}"
             )
 
-    def get_kernel_name(self):  # type: ignore[no-untyped-def]
+    def get_kernel_name(self) -> str:
+        from .codegen.cpp_wrapper_cpu import CppWrapperCpu
+
         device = d.type if (d := self.get_device()) else V.graph.device_type
-        return (
-            V.graph.wrapper_code.get_c_shim_func_name(self.cpp_kernel_name, device)  # type: ignore[attr-defined]
-            if V.graph.cpp_wrapper
-            else self.python_kernel_name
-        )
+        if V.graph.cpp_wrapper:
+            assert isinstance(V.graph.wrapper_code, CppWrapperCpu), type(
+                V.graph.wrapper_code
+            )
+            assert self.cpp_kernel_name is not None
+            return V.graph.wrapper_code.get_c_shim_func_name(
+                self.cpp_kernel_name, device
+            )
+        else:
+            assert self.python_kernel_name is not None
+            return self.python_kernel_name
 
     @staticmethod
-    def copy_input(x):  # type: ignore[no-untyped-def]
+    def copy_input(x: IRNode) -> Union[TensorBox, ShapeAsConstantBuffer]:
         pw = Pointwise.create(
             device=x.get_device(),
             dtype=x.get_dtype(),
@@ -5151,8 +5162,8 @@ class ExternKernel(InputsKernel):
         return pw
 
     @classmethod
-    def process_kernel(  # type: ignore[no-untyped-def]
-        cls, kernel, *args, **kwargs
+    def process_kernel(
+        cls, kernel: _OpOverloads, *args: Any, **kwargs: Any
     ) -> tuple[
         Any,
         list[Any],
@@ -5175,11 +5186,13 @@ class ExternKernel(InputsKernel):
             if is_arg_tensor[-1]:
                 tensor_args.append(arg)
             else:
-                if isinstance(arg, sympy.Expr):
+                if isinstance(arg, Expr):
                     arg = V.graph.sizevars.shape_env.create_symintnode(arg, hint=None)
                 non_tensor_args.append(arg)
 
-        def unflatten_args(new_tensor_args, new_non_tensor_args):  # type: ignore[no-untyped-def]
+        def unflatten_args(
+            new_tensor_args: Sequence[Any], new_non_tensor_args: Sequence[Any]
+        ) -> tuple[list[Any], dict[str, Any]]:
             result = []
             it_tensors = iter(new_tensor_args)
             it_non_tensors = iter(new_non_tensor_args)
@@ -5261,13 +5274,13 @@ class ExternKernel(InputsKernel):
         )
 
     @classmethod
-    def convert_to_reinterpret_view(cls, x):  # type: ignore[no-untyped-def]
+    def convert_to_reinterpret_view(cls, x: IRNode) -> ReinterpretView:
         """
         In order to pass this to an extern kernel we need a
         ReinterpretView not a View.  This allows us to avoid some
         unneeded copies.
         """
-        assert isinstance(x, BaseView)
+        assert isinstance(x, BaseView), type(x)
         if isinstance(x, ReinterpretView):
             return x
 
@@ -5281,6 +5294,7 @@ class ExternKernel(InputsKernel):
         if (
             x_unwrap_view_fx_node is not None
             and "val" in x_unwrap_view_fx_node.meta
+            and hasattr(x_unwrap_view, "layout")
             and isinstance(x_unwrap_view.layout, FlexibleLayout)
             and (
                 x_unwrap_view_fx_node.meta["val"].is_contiguous(
@@ -5298,8 +5312,7 @@ class ExternKernel(InputsKernel):
             x_unwrap_view.freeze_layout()
 
         index_args, var_ranges = dependencies.index_vars_squeeze(
-            x.get_size(),
-            prefix="r",  # type: ignore[arg-type]
+            x.get_size(), prefix="r"
         )
         range_vars = index_args[0]
         index = x.make_indexer()(range_vars)
@@ -5323,17 +5336,17 @@ class ExternKernel(InputsKernel):
             layout=FixedLayout(
                 device=x.get_device_or_error(),
                 dtype=x.get_dtype(),
-                size=x.get_size(),  # type: ignore[arg-type]
+                size=x.get_size(),
                 stride=strides,
                 offset=offset,
             ),
         )
 
     @classmethod
-    def realize_input(cls, x):  # type: ignore[no-untyped-def]
+    def realize_input(cls, x: IRNode) -> IRNode:
         if x is None:
             return NoneAsConstantBuffer()
-        if isinstance(x, (sympy.Expr, sympy.logic.boolalg.Boolean, int)):
+        if isinstance(x, (Expr, sympy.logic.boolalg.Boolean, int)):
             return ShapeAsConstantBuffer(expr=x)
         if isinstance(x, Constant):
             return V.graph.add_tensor_constant(
@@ -5363,7 +5376,7 @@ class ExternKernel(InputsKernel):
         return cls.copy_input(x)
 
     @classmethod
-    def require_stride1(cls, x):  # type: ignore[no-untyped-def]
+    def require_stride1(cls, x: IRNode) -> IRNode:
         if is_storage_and_layout(x):
             if len(x.get_stride()) == 0:
                 return x
@@ -5373,13 +5386,13 @@ class ExternKernel(InputsKernel):
         return cls.copy_input(x)
 
     @classmethod
-    def require_strides(  # type: ignore[no-untyped-def]
+    def require_strides(
         cls,
-        x,
+        x: IRNode,
         order: Optional[Sequence[int]] = None,
         exact_strides: Optional[Sequence[_IntLike]] = None,
-        allow_padding=False,
-    ):
+        allow_padding: bool = False,
+    ) -> IRNode:
         assert order is not None or exact_strides is not None
         # Layout generally doesn't matter, but some consuming external ops might have requirements
         if x.get_numel() in (0, 1) and not exact_strides:
@@ -5438,19 +5451,21 @@ class ExternKernel(InputsKernel):
                     if exact_strides is not None
                     else x
                 )
-            elif isinstance(x.get_layout(), MutationLayoutSHOULDREMOVE):
-                if isinstance(x.get_layout().real_layout(), FlexibleLayout):
+            elif isinstance(
+                (mutation_layout := x.get_layout()), MutationLayoutSHOULDREMOVE
+            ):
+                if isinstance(
+                    (real_layout := mutation_layout.real_layout()), FlexibleLayout
+                ):
                     raise AssertionError(
                         "the MutationLayoutSHOULDREMOVE's real layout shouldn't be FlexibleLayout"
                     )
-                elif isinstance(x.get_layout().real_layout(), FixedLayout) and (
-                    (order and x.get_layout().real_layout().is_stride_ordered(order))
+                elif isinstance(real_layout, FixedLayout) and (
+                    (order and real_layout.is_stride_ordered(order))
                     or (
                         exact_strides
                         and significant_strides_equal(
-                            exact_strides,
-                            x.get_layout().real_layout().stride,
-                            x.get_size(),
+                            exact_strides, real_layout.stride, x.get_size()
                         )
                     )
                 ):
@@ -5471,8 +5486,9 @@ class ExternKernel(InputsKernel):
             isinstance(x, TensorBox)
             and isinstance(x.data, BaseView)
             and not isinstance(x.data, ReinterpretView)
-            and is_storage_and_layout(x.unwrap_view())
-            and not isinstance(x.unwrap_view().data, ExternKernelAlloc)  # type: ignore[attr-defined]
+            and is_storage_and_layout(unwrap_view := x.unwrap_view())
+            and hasattr(unwrap_view, "data")
+            and not isinstance(unwrap_view.data, ExternKernelAlloc)
         ):
             try:
                 x.data = cls.convert_to_reinterpret_view(x.data)
@@ -5530,31 +5546,37 @@ class ExternKernel(InputsKernel):
         return x
 
     @classmethod
-    def require_exact_strides(cls, x, exact_strides, allow_padding=False):  # type: ignore[no-untyped-def]
+    def require_exact_strides(
+        cls, x: IRNode, exact_strides: Sequence[_IntLike], allow_padding: bool = False
+    ) -> IRNode:
         return cls.require_strides(
             x, exact_strides=exact_strides, allow_padding=allow_padding
         )
 
     @classmethod
-    def require_stride_order(cls, x, order, allow_padding=False):  # type: ignore[no-untyped-def]
+    def require_stride_order(
+        cls, x: IRNode, order: Sequence[int], allow_padding: bool = False
+    ) -> IRNode:
         return cls.require_strides(x, order=order, allow_padding=allow_padding)
 
     @classmethod
-    def require_channels_last(cls, x):  # type: ignore[no-untyped-def]
+    def require_channels_last(cls, x: IRNode) -> IRNode:
         return cls.require_stride_order(x, NHWC_STRIDE_ORDER)
 
     @classmethod
-    def require_channels_last_3d(cls, x):  # type: ignore[no-untyped-def]
+    def require_channels_last_3d(cls, x: IRNode) -> IRNode:
         return cls.require_stride_order(x, NHWDC_STRIDE_ORDER)
 
     @classmethod
-    def require_contiguous(cls, x):  # type: ignore[no-untyped-def]
+    def require_contiguous(cls, x: IRNode) -> IRNode:
         return cls.require_stride_order(x, list(reversed(range(len(x.get_size())))))
 
     def apply_constraint(self) -> None:
         pass
 
-    def fill_non_provided_args(self, args, kwargs):  # type: ignore[no-untyped-def]
+    def fill_non_provided_args(
+        self, args: Sequence[Any], kwargs: dict[str, Any]
+    ) -> Sequence[Any]:
         # Previously, we want to maintain forward-compatibility by skipping
         # default args in the serialized artifacts in fbcode. However,
         # some of our shim interfaces require default values being OrderedSet.
@@ -5563,8 +5585,8 @@ class ExternKernel(InputsKernel):
         # part if we see real FC requirement. More details related to FC
         # can be found at:
         # https://docs.google.com/document/d/1FzWm-sHYwmRi3x_g036kOxd99KaYquUsA-L5JwOn8ys/edit?usp=sharing
-        assert isinstance(args, (list, tuple))
-        if isinstance(args, tuple):
+        assert isinstance(args, Sequence), type(args)
+        if not isinstance(args, list):
             args = list(args)
         assert self.arg_properties, "ExternKernel.arg_properties should not be empty"
 
@@ -5588,7 +5610,7 @@ class ExternKernel(InputsKernel):
                 )
         return args
 
-    def codegen_const_args(self, names: Optional[list[str]] = None):  # type: ignore[no-untyped-def]
+    def codegen_const_args(self, names: Optional[list[str]] = None) -> list[str]:
         if V.graph.cpp_wrapper:
             result = []
             # Aten ops follow the convention that tensor args are before non-tensor args,
@@ -5606,7 +5628,8 @@ class ExternKernel(InputsKernel):
 
             for i, x in enumerate(self.constant_args):
                 if name_to_arg_properties is not None:
-                    prop = name_to_arg_properties.get(names[i])  # type: ignore[index]
+                    assert names is not None
+                    prop = name_to_arg_properties.get(names[i])
                     type_ = prop.get("type") if prop else None
                 else:
                     idx = len(self.inputs) + i
@@ -5618,9 +5641,9 @@ class ExternKernel(InputsKernel):
                 result.append(V.graph.wrapper_code.val_to_arg_str(x, type_))
             return result
         else:
-            return map(V.graph.wrapper_code.val_to_arg_str, self.constant_args)
+            return [V.graph.wrapper_code.val_to_arg_str(a) for a in self.constant_args]
 
-    def codegen_args(self):  # type: ignore[no-untyped-def]
+    def codegen_args(self) -> list[str]:
         if V.graph.cpp_wrapper and self.op_overload is not None:
             # cpp wrapper needs special logic to fill in missing args with default values
             inputs = self.fill_non_provided_args(
@@ -5646,7 +5669,7 @@ class ExternKernel(InputsKernel):
             args.extend(self.codegen_const_args())
         return args
 
-    def get_kwargs_value(self, arg_name, **kwargs):  # type: ignore[no-untyped-def]
+    def get_kwargs_value(self, arg_name: str, **kwargs: Any) -> Any:
         """Given an argument name, queries for values in (in order):
         1. any provided kwargs for this function.
         2. the class self.kwargs member.
@@ -5655,11 +5678,11 @@ class ExternKernel(InputsKernel):
             return kwargs.get(arg_name)
         if arg_name in self.kwargs:
             return self.kwargs.get(arg_name)
-        if self.allarg_properties and arg_name in self.allarg_properties:
-            return self.allarg_properties.get(arg_name).get("default_value")  # type: ignore[union-attr]
+        if (arg := self.allarg_properties.get(arg_name)) is not None:
+            return arg.get("default_value")
         raise AssertionError(f"{arg_name} not in self.allarg_properties")
 
-    def codegen_kwargs(self, skip_out=False):  # type: ignore[no-untyped-def]
+    def codegen_kwargs(self, skip_out: bool = False) -> list[str]:
         if V.graph.cpp_wrapper:
             if self.op_overload is not None and len(self.schema_kwargs) == 0:
                 # All the args should have been generated by fill_non_provided_args in codegen_args
@@ -5672,14 +5695,11 @@ class ExternKernel(InputsKernel):
                     continue
 
                 v = self.get_kwargs_value(arg_name)
-                if isinstance(v, sympy.Expr):
+                if isinstance(v, Expr):
                     kwargs.append(v)
                 else:
-                    type_ = (
-                        self.allarg_properties.get(arg_name).get("type")  # type: ignore[union-attr]
-                        if self.allarg_properties and arg_name in self.allarg_properties
-                        else None
-                    )
+                    assert self.allarg_properties is not None
+                    type_ = self.allarg_properties.get(arg_name, {}).get("type")
                     kwargs.append(V.graph.wrapper_code.val_to_arg_str(v, type_))
         else:
             kwargs = [
@@ -5688,7 +5708,7 @@ class ExternKernel(InputsKernel):
             ]
         return kwargs
 
-    def codegen_size_asserts(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen_size_asserts(self, wrapper: PythonWrapperCodegen) -> None:
         if config.size_asserts and not V.graph.cpp_wrapper:
             # comparing strides for 0 size tensor is tricky. Ignore them for now.
             if sympy_product(self.get_size()) == 0:
@@ -5699,7 +5719,7 @@ class ExternKernel(InputsKernel):
                 f"assert_size_stride({self.get_name()}, {size}, {stride})"
             )
 
-    def get_group_stride(self):  # type: ignore[no-untyped-def]
+    def get_group_stride(self) -> tuple[list[Sequence[Expr]], list[Expr]]:
         """
         get output sizes and strides, for template_codegen
         """
@@ -5708,7 +5728,7 @@ class ExternKernel(InputsKernel):
         # iter_ranges = _size of output tensor, reduce_range = [] because no reduction
         return [_size, []], _stride
 
-    def canonicalize(self):  # type: ignore[no-untyped-def]
+    def canonicalize(self) -> tuple[Expr, Sequence[Expr]]:
         """
         Manually get canonicalization of the output index
         """
@@ -5766,7 +5786,7 @@ class ExternKernel(InputsKernel):
 
 @ir_dataclass(frozen=False)
 class ExternKernelOut(ExternKernel):
-    def codegen(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
         self.codegen_comment(wrapper)
         args = [*self.codegen_args(), *self.codegen_kwargs(skip_out=True)]
         kernel_name = self.get_kernel_name()
@@ -5787,22 +5807,24 @@ class ExternKernelOut(ExternKernel):
             device,
         )
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(
         self,
-        layout,
-        inputs,
-        constant_args=(),
-        kwargs=None,
-        output_view=None,
-        python_kernel_name=None,
-        cpp_kernel_name=None,
-        ordered_kwargs_for_cpp_kernel=(),
-        op_overload=None,
+        layout: Layout,
+        inputs: Sequence[IRNode],
+        constant_args: Sequence[Any] = (),
+        kwargs: Optional[dict[str, Any]] = None,
+        output_view: Optional[ReinterpretView] = None,
+        python_kernel_name: Optional[str] = None,
+        cpp_kernel_name: Optional[str] = None,
+        ordered_kwargs_for_cpp_kernel: Sequence[Any] = (),
+        op_overload: Optional[_OpOverloads] = None,
     ) -> None:
+        unwrapped_inputs = self.unwrap_storage(inputs)
+        assert isinstance(unwrapped_inputs, Sequence), type(unwrapped_inputs)
         super().__init__(
             None,
             layout,
-            self.unwrap_storage(inputs),
+            unwrapped_inputs,
             constant_args,
             kwargs or {},
             None,
