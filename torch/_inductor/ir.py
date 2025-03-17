@@ -7325,19 +7325,19 @@ class MutableBox(IRNode):
 
 class TensorBox(MutableBox):
     @staticmethod
-    def create(data):  # type: ignore[no-untyped-def]
+    def create(data: IRNode) -> Union[TensorBox, ShapeAsConstantBuffer]:
         if isinstance(data, ShapeAsConstantBuffer):
             return data
         return TensorBox(StorageBox(data))
 
 
 class StorageBox(MutableBox):
-    def is_input_buffer(self):  # type: ignore[no-untyped-def]
+    def is_input_buffer(self) -> bool:
         if isinstance(self.data, (InputBuffer, ReinterpretView)):
             return self.data.get_name() in V.graph.graph_inputs
         return False
 
-    def is_module_buffer(self):  # type: ignore[no-untyped-def]
+    def is_module_buffer(self) -> bool:
         return (
             isinstance(self.data, (ConstantBuffer))
             and self.data.get_name() in V.graph.constants
@@ -7360,10 +7360,12 @@ class StorageBox(MutableBox):
         )
         origin_node = self.data.get_origin_node()
         traceback = self.data.get_traceback()
+        device = self.data.get_device()
+        assert device is not None
         self.data = ComputedBuffer(
             name=None,
             layout=FlexibleLayout(
-                device=self.data.get_device(),
+                device=device,
                 dtype=self.data.get_dtype(),
                 size=self.data.get_size(),
             ),
@@ -7392,7 +7394,7 @@ class StorageBox(MutableBox):
             or self.has_large_inner_fn()
         )
 
-    def should_realize_on_reuse(self, users):  # type: ignore[no-untyped-def]
+    def should_realize_on_reuse(self, users: int) -> bool:
         """
         A heuristic to decide if we should realize a tensor
         that is used multiple times.
@@ -7414,7 +7416,7 @@ class StorageBox(MutableBox):
         if self.should_realize_on_reuse(users):
             self.realize()
 
-    def num_reads(self):  # type: ignore[no-untyped-def]
+    def num_reads(self) -> int:
         return self.data.num_reads()
 
 
@@ -7437,11 +7439,14 @@ def _has_aliased_buffers(buffers: Sequence[IRNode]) -> bool:
 @ir_dataclass(frozen=False)
 class InvokeSubgraph(ExternKernel):
     subgraph: Optional[Subgraph] = None
-    operands: Optional[list[TensorBox]] = None
-    outputs: Optional[list[MultiOutput]] = None
+    operands: Optional[Sequence[TensorBox]] = None
+    outputs: Optional[Sequence[IRNode]] = None
 
     def __init__(
-        self, subgraph: Subgraph, operands: list[TensorBox], layout: MultiOutputLayout
+        self,
+        subgraph: Subgraph,
+        operands: Sequence[TensorBox],
+        layout: MultiOutputLayout,
     ) -> None:
         super().__init__(
             name=None,
@@ -7453,20 +7458,23 @@ class InvokeSubgraph(ExternKernel):
         V.graph.register_operation(self)
 
     @classmethod
-    def create(cls, subgraph: Subgraph, operands):  # type: ignore[no-untyped-def]
+    def create(cls, subgraph: Subgraph, operands: Sequence[IRNode]) -> Sequence[IRNode]:
         # TODO(anijain2305) - Support sym expr as operands in future.
         fx_operands = V.graph.current_node.args[-1]
-        fake_operands = [x.meta["val"] for x in fx_operands]  # type: ignore[union-attr]
+
+        assert isinstance(fx_operands, Sequence), type(fx_operands)
+        assert all(isinstance(n, Node) for n in fx_operands)
+        fake_operands = [cast(Node, x).meta["val"] for x in fx_operands]
 
         # Realize the inputs. Also intermediates can have different strides than
         # the inputs of the subgraph. So, force the intermediates to have same
         # strides as that of subgraph inputs.
-        operands = [cls.realize_input(x) for x in operands]
+        operands: list[IRNode] = [cls.realize_input(x) for x in operands]
 
-        def handle_sym_expr(stride):  # type: ignore[no-untyped-def]
+        def handle_sym_expr(stride: Sequence[Expr]) -> list[Expr]:
             return [s.node.expr if isinstance(s, torch.SymInt) else s for s in stride]
 
-        new_operands = []
+        new_operands: list[IRNode] = []
         for idx, operand in enumerate(operands):
             if isinstance(operand, ShapeAsConstantBuffer):
                 new_operands.append(operand)
@@ -7497,48 +7505,50 @@ class InvokeSubgraph(ExternKernel):
                 break
         assert device is not None
 
+        assert all(isinstance(o, TensorBox) for o in operands)
         invoke_subgraph = InvokeSubgraph(
             subgraph=subgraph,
-            operands=operands,
+            operands=cast(list[TensorBox], operands),
             layout=MultiOutputLayout(device=device),
         )
 
-        def create_output(output: IRNode, ind: int):
+        def make_output(ind: int, output: IRNode) -> IRNode:
             if isinstance(output, (ShapeAsConstantBuffer, NoneAsConstantBuffer)):
                 return output
-            else:
-                return MultiOutput(
-                    FixedLayout(
-                        device=output.get_device(),
-                        dtype=output.get_dtype(),
-                        size=output.get_size(),  # type: ignore[arg-type]
-                        stride=output.get_stride(),
-                        offset=output.get_layout().offset,
-                    ),
-                    invoke_subgraph,
-                    [(list, ind)],
-                )
+            device = output.get_device()
+            assert device is not None
+            return MultiOutput(
+                FixedLayout(
+                    device=device,
+                    dtype=output.get_dtype(),
+                    size=output.get_size(),
+                    stride=output.get_stride(),
+                    offset=output.get_layout().offset,
+                ),
+                invoke_subgraph,
+                [(list, ind)],
+            )
 
-        outputs = [create_output(output, i) for i, output in enumerate(outputs)]
-        invoke_subgraph.outputs = outputs
-        return outputs
+        outs = [make_output(i, output) for i, output in enumerate(outputs)]
+        invoke_subgraph.outputs = outs
+        return outs
 
-    def codegen(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
         wrapper.codegen_invoke_subgraph(self)
 
 
 @ir_dataclass(frozen=False)
 class Conditional(ExternKernel):
     predicate: Optional[IRNode] = None
-    operands: Optional[list[Union[TensorBox, ShapeAsConstantBuffer]]] = None
+    operands: Sequence[IRNode] = ()
     true_subgraph: Optional[Subgraph] = None
     false_subgraph: Optional[Subgraph] = None
-    outputs: Optional[list[MultiOutput]] = None
+    outputs: Sequence[IRNode] = ()
 
     def __init__(
         self,
         predicate: IRNode,
-        operands: list[Union[TensorBox, ShapeAsConstantBuffer]],
+        operands: Sequence[IRNode],
         true_subgraph: Subgraph,
         false_subgraph: Subgraph,
         layout: MultiOutputLayout,
@@ -7549,7 +7559,7 @@ class Conditional(ExternKernel):
         self.true_subgraph = true_subgraph
         self.false_subgraph = false_subgraph
 
-        sym_args, tensor_args = _split_by_sym_type([predicate] + operands)
+        sym_args, tensor_args = _split_by_sym_type([predicate, *operands])
 
         super().__init__(
             name=None,
@@ -7564,17 +7574,20 @@ class Conditional(ExternKernel):
         V.graph.register_operation(self)
 
     @classmethod
-    def create(  # type: ignore[no-untyped-def]
+    def create(
         cls,
         predicate: TensorBox,
         true_fn: Subgraph,
         false_fn: Subgraph,
         operands: list[Union[TensorBox, ShapeAsConstantBuffer]],
-    ):
+    ) -> Sequence[IRNode]:
         predicate = cls.realize_input(predicate)
         operands = [cls.realize_input(x) for x in operands]
-        fx_operands = V.graph.current_node.args[-1]
-        fake_operands = [x.meta["val"] for x in fx_operands]  # type: ignore[union-attr]
+        fx_operands: Argument = V.graph.current_node.args[-1]
+
+        assert isinstance(fx_operands, Sequence), type(fx_operands)
+        assert all(isinstance(n, Node) for n in fx_operands)
+        fake_operands = [cast(Node, x).meta["val"] for x in fx_operands]
 
         for subgraph in (true_fn, false_fn):
             if subgraph.graph is None:
@@ -7587,8 +7600,10 @@ class Conditional(ExternKernel):
                 with V.set_graph_handler(subgraph.graph):
                     subgraph.graph.run(*fake_operands)
 
-        true_outputs = true_fn.graph.graph_outputs  # type: ignore[union-attr]
-        false_outputs = false_fn.graph.graph_outputs  # type: ignore[union-attr]
+        assert true_fn.graph is not None
+        assert false_fn.graph is not None
+        true_outputs = true_fn.graph.graph_outputs
+        false_outputs = false_fn.graph.graph_outputs
 
         for name, outputs in (("true_fn", true_outputs), ("false_fn", false_outputs)):
             if _has_aliased_buffers(true_outputs):
@@ -7631,7 +7646,7 @@ class Conditional(ExternKernel):
         outputs = [
             MultiOutput(
                 FixedLayout(
-                    device=output.get_device(),
+                    device=device,
                     dtype=output.get_dtype(),
                     size=[_maybe_expr(sz) for sz in merged_output.size()],
                     stride=[_maybe_expr(sz) for sz in merged_output.stride()],
@@ -7647,10 +7662,10 @@ class Conditional(ExternKernel):
             )
         ]
 
-        conditional.outputs = outputs  # type: ignore[assignment]
+        conditional.outputs = outputs
         return outputs
 
-    def codegen(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
         wrapper.codegen_conditional(self)
         wrapper.codegen_unbacked_symbol_defs_for_outputs(
             self.get_name(), self.outputs, getattr(self, "unbacked_bindings", {})
@@ -7662,7 +7677,7 @@ class Conditional(ExternKernel):
                 V.graph.sizevars.shape_env, unbacked_bindings
             )
             assert resolved is not None
-            return resolved.keys()  # type: ignore[return-value]
+            return OrderedSet(resolved.keys())
         else:
             return OrderedSet()
 
@@ -7683,16 +7698,16 @@ def _split_by_sym_type(
 
 @ir_dataclass(frozen=False)
 class WhileLoop(ExternKernel):
-    carried_inputs: Optional[list[Union[TensorBox, ShapeAsConstantBuffer]]] = None
-    additional_inputs: Optional[list[Union[TensorBox, ShapeAsConstantBuffer]]] = None
+    carried_inputs: Sequence[IRNode] = ()
+    additional_inputs: Sequence[IRNode] = ()
     cond_subgraph: Optional[Subgraph] = None
     body_subgraph: Optional[Subgraph] = None
-    outputs: Optional[list[MultiOutput]] = None
+    outputs: Sequence[MultiOutput] = ()
 
     def __init__(
         self,
-        carried_inputs: list[Union[TensorBox, ShapeAsConstantBuffer]],
-        additional_inputs: list[Union[TensorBox, ShapeAsConstantBuffer]],
+        carried_inputs: Sequence[IRNode],
+        additional_inputs: Sequence[IRNode],
         cond_subgraph: Subgraph,
         body_subgraph: Subgraph,
         layout: MultiOutputLayout,
@@ -7702,7 +7717,9 @@ class WhileLoop(ExternKernel):
         self.cond_subgraph = cond_subgraph
         self.body_subgraph = body_subgraph
 
-        sym_args, tensor_args = _split_by_sym_type(carried_inputs + additional_inputs)
+        sym_args, tensor_args = _split_by_sym_type(
+            [*carried_inputs, *additional_inputs]
+        )
         super().__init__(
             name=None,
             layout=layout,
@@ -7714,17 +7731,17 @@ class WhileLoop(ExternKernel):
         V.graph.register_operation(self)
 
     @classmethod
-    def create(  # type: ignore[no-untyped-def]
+    def create(
         cls,
         cond_fn: Subgraph,
         body_fn: Subgraph,
         carried_inputs: list[Union[TensorBox, ShapeAsConstantBuffer]],
         additional_inputs: list[Union[TensorBox, ShapeAsConstantBuffer]],
-    ):
+    ) -> Union[IRNode, Sequence[IRNode]]:
         def _require_exact_strides(
-            tensor_boxes: list[TensorBox | ShapeAsConstantBuffer],
+            tensor_boxes: Sequence[IRNode],
             fake_tensors: list[Union[int, torch.SymInt, torch.Tensor]],
-        ) -> list[TensorBox | ShapeAsConstantBuffer]:
+        ) -> list[IRNode]:
             assert len(tensor_boxes) == len(fake_tensors)
             ret = []
             for tb, fk in zip(tensor_boxes, fake_tensors):
@@ -7745,20 +7762,21 @@ class WhileLoop(ExternKernel):
         fake_carried_inputs = [x.meta["val"] for x in fx_carried_inputs]  # type: ignore[union-attr]
         fake_additional_inputs = [x.meta["val"] for x in fx_additional_inputs]  # type: ignore[union-attr]
 
-        carried_inputs = [cls.realize_input(x) for x in carried_inputs]
-        carried_inputs = _require_exact_strides(carried_inputs, fake_carried_inputs)
-        additional_inputs = [cls.realize_input(x) for x in additional_inputs]
-        additional_inputs = _require_exact_strides(
-            additional_inputs, fake_additional_inputs
+        carried_inputs_ = [cls.realize_input(x) for x in carried_inputs]
+        carried_inputs_ = _require_exact_strides(carried_inputs_, fake_carried_inputs)
+        additional_inputs_ = [cls.realize_input(x) for x in additional_inputs]
+        additional_inputs_ = _require_exact_strides(
+            additional_inputs_, fake_additional_inputs
         )
-        all_inputs = carried_inputs + additional_inputs
+        all_inputs = carried_inputs_ + additional_inputs_
 
         for subgraph in (cond_fn, body_fn):
             if subgraph.graph is None:
                 # create and lower subgraphs
+                assert isinstance(fx_all_inputs, Sequence), type(fx_all_inputs)
                 subgraph.graph = V.graph.make_subgraph(
                     gm=subgraph.graph_module,
-                    example_inputs=fx_all_inputs,  # type: ignore[arg-type]
+                    example_inputs=fx_all_inputs,
                     subgraph_name=subgraph.name,
                 )
                 with V.set_graph_handler(subgraph.graph):
@@ -7778,8 +7796,9 @@ class WhileLoop(ExternKernel):
                             fake_carried_inputs,
                         )
 
-        cond_outputs = cond_fn.graph.graph_outputs  # type: ignore[union-attr]
-        body_outputs = body_fn.graph.graph_outputs  # type: ignore[union-attr]
+        assert cond_fn.graph and body_fn.graph
+        cond_outputs = cond_fn.graph.graph_outputs
+        body_outputs = body_fn.graph.graph_outputs
 
         if _has_aliased_buffers(body_outputs):
             raise AssertionError(
@@ -7801,38 +7820,45 @@ class WhileLoop(ExternKernel):
         device = all_inputs[0].get_device()
 
         assert device is not None  # to make linter happy
-        # make sure carried_inputs and body outputs are structurally equivalent
-        assert len(carried_inputs) == len(body_outputs), (carried_inputs, body_outputs)
-        for i, (op, bo) in enumerate(zip(carried_inputs, body_outputs)):
+        # make sure carried_inputs_ and body outputs are structurally equivalent
+        assert len(carried_inputs_) == len(body_outputs), (
+            carried_inputs_,
+            body_outputs,
+        )
+        for i, (op, bo) in enumerate(zip(carried_inputs_, body_outputs)):
 
             def _guard_list_equals(
-                lhs_exprs: Sequence[Union[int, Any]],
-                rhs_exprs: Sequence[Union[int, Any]],
+                lhs_exprs: Sequence[Union[int, sympy.expr]],
+                rhs_exprs: Sequence[Union[int, sympy.expr]],
             ) -> None:
+                assert len(lhs_exprs) == len(rhs_exprs)
                 for lhs, rhs in zip(lhs_exprs, rhs_exprs):
                     V.graph.sizevars.guard_equals(lhs, rhs)
 
             _guard_list_equals(op.get_size(), bo.get_size())
             _guard_list_equals(op.get_stride(), bo.get_stride())
-            # assume all carried_inputs and outputs are on the same device
+            # assume all carried_inputs_ and outputs are on the same device
             # as the MultiOutputLayout below requires single device
             assert op.get_device() == bo.get_device(), (i, op, bo, device)
             assert op.get_dtype() == bo.get_dtype(), (i, op, bo)
             assert op.get_layout().offset == bo.get_layout().offset, (i, op, bo)
 
+        assert device is not None
         while_loop = WhileLoop(
-            carried_inputs=carried_inputs,
-            additional_inputs=additional_inputs,
+            carried_inputs=carried_inputs_,
+            additional_inputs=additional_inputs_,
             cond_subgraph=cond_fn,
             body_subgraph=body_fn,
             # asserted above that there is at least one operand
             layout=MultiOutputLayout(device=device),
         )
 
-        outputs = [
-            MultiOutput(
+        def make_multi(i: int, output: IRNode) -> MultiOutput:
+            device = output.get_device()
+            assert device is not None
+            return MultiOutput(
                 FixedLayout(
-                    device=output.get_device(),
+                    device=device,
                     dtype=output.get_dtype(),
                     size=output.get_size(),
                     stride=output.get_stride(),
@@ -7841,10 +7867,10 @@ class WhileLoop(ExternKernel):
                 while_loop,
                 [(list, i)],
             )
-            for i, output in enumerate(body_outputs)
-        ]
 
-        for inp, out in zip(carried_inputs, outputs):
+        outputs = [make_multi(i, o) for i, o in enumerate(body_outputs)]
+
+        for inp, out in zip(carried_inputs_, outputs):
             if inp.get_name() in V.graph.graph_inputs:
                 # if a carried input of the while_loop is a graph input,
                 # it can be returned as is when the number of iterations
@@ -7856,21 +7882,21 @@ class WhileLoop(ExternKernel):
         while_loop.outputs = outputs
         return outputs
 
-    def codegen(self, wrapper) -> None:  # type: ignore[no-untyped-def]
+    def codegen(self, wrapper: PythonWrapperCodegen) -> None:
         wrapper.codegen_while_loop(self)
 
 
 class EffectfulKernel(FallbackKernel):
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(
         self,
-        layout,
-        kernel,
-        tensor_args,
-        nontensor_args,
-        unflatten_args,
-        kwargs=None,
+        layout: OutputSpec,
+        kernel: _OpOverloads,
+        tensor_args: Sequence[IRNode],
+        nontensor_args: Sequence[Any],
+        unflatten_args: Callable[..., Any],
+        kwargs: Optional[dict[str, Any]] = None,
         *,
-        unbacked_bindings=None,
+        unbacked_bindings: Optional[dict[sympy.Symbol, pytree.KeyPath]] = None,
     ) -> None:
         super().__init__(
             layout,
@@ -7918,7 +7944,7 @@ class TorchBindObject(NonTensorObj):
     name: str
     value: Union[FakeScriptObject, torch.ScriptObject]
 
-    def get_name(self):  # type: ignore[no-untyped-def]
+    def get_name(self) -> str:
         return self.name
 
     def codegen_reference(self, writer: Optional[IndentedBuffer] = None) -> str:
@@ -7936,7 +7962,8 @@ class TorchBindObject(NonTensorObj):
     def get_buf_bytes(self) -> int:
         # Returns the sum of all tensors in the flattened object
         real_script_obj = self.get_real_obj()
-        flat_dict = dict(real_script_obj.__obj_flatten__())  # type: ignore[attr-defined]
+        assert hasattr(real_script_obj, "__obj_flatten__")
+        flat_dict = dict(real_script_obj.__obj_flatten__())
         flat_elems = pytree.tree_flatten(flat_dict)[0]
         flat_sizes = [
             x.element_size() * x.numel()
@@ -7951,7 +7978,7 @@ class GeneratorState(NonTensorObj):
     name: str
     device: torch.device
 
-    def get_name(self):  # type: ignore[no-untyped-def]
+    def get_name(self) -> str:
         return self.name
 
     def codegen_reference(self, writer: Optional[IndentedBuffer] = None) -> str:
@@ -7985,8 +8012,12 @@ class _CollectiveKernel(FallbackKernel):
     # the constraints, we model collective -> wait_tensor as as two-step
     # mutation of the input buffers.
     @classmethod
-    def create_inplace(  # type: ignore[no-untyped-def]
-        cls, kernel, inputs: Union[TensorBox, list[TensorBox]], *args, **kwargs
+    def create_inplace(
+        cls,
+        kernel: _OpOverloads,
+        inputs: Union[IRNode, list[IRNode]],
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         with V.graph.fake_mode:
             (
@@ -8046,9 +8077,13 @@ class _CollectiveKernel(FallbackKernel):
     # TODO(yifu): add a pre-grad pass to validate the correctness of collective
     # usage in the user program.
     @classmethod
-    def create_out_of_place(  # type: ignore[no-untyped-def]
-        cls, kernel, inputs: Union[TensorBox, list[TensorBox]], *args, **kwargs
-    ):
+    def create_out_of_place(
+        cls,
+        kernel: _OpOverloads,
+        inputs: Union[TensorBox, list[TensorBox]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Union[list[MultiOutput], _CollectiveKernel]:
         with V.graph.fake_mode:
             (
                 example_output,
@@ -8063,6 +8098,7 @@ class _CollectiveKernel(FallbackKernel):
 
         if isinstance(example_output, list):
             device = cls.find_device(tensor_args, example_output)
+            assert device is not None
             packed = cls(
                 MultiOutputLayout(device=device),
                 kernel,
@@ -8092,11 +8128,13 @@ class _CollectiveKernel(FallbackKernel):
 
 
 class _WaitKernel(_CollectiveKernel):
-    def get_volatile_reads(self):  # type: ignore[no-untyped-def]
-        inp = self.inputs[0]
+    def get_volatile_reads(self) -> Sequence[IRNode]:
+        inp = self.inputs_as_nodes[0]
         if isinstance(inp, _CollectiveKernel):
             # Out-of-place single-output
-            return [inp.inputs[0]]
+            i = inp.inputs[0]
+            assert isinstance(i, IRNode), type(i)
+            return [i]
         elif isinstance(inp, MultiOutput):
             # This can be two things:
             # 1. Out-of-place multi-output coll
@@ -8114,7 +8152,7 @@ class _WaitKernel(_CollectiveKernel):
             return []
 
     @classmethod
-    def create_wait(cls, kernel, inp: TensorBox) -> None:  # type: ignore[no-untyped-def]
+    def create_wait(cls, kernel: _OpOverloads, inp: TensorBox) -> None:
         with V.graph.fake_mode:
             (
                 _example_output,
