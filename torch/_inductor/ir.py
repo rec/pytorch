@@ -2605,7 +2605,7 @@ class BaseView(DataNode):
         return self.data.is_extern()
 
     def is_module_buffer(self) -> bool:
-        assert isinstance(self.data, (BaseView, StorageBox)), type(self.data)
+        assert isinstance(self.data, DataNode), type(self.data)
         return self.data.is_module_buffer()
 
     def get_read_names(self) -> OrderedSet[str]:
@@ -2620,7 +2620,7 @@ class BaseView(DataNode):
 
     def unwrap_view(self) -> IRNode:
         x: IRNode = self
-        while isinstance(x, BaseView):
+        while isinstance(x, DataNode):
             x = x.data
         return x
 
@@ -3831,7 +3831,7 @@ class MutationLayoutSHOULDREMOVE(Layout):
                     for a, b in zip(src.get_size(), dst.get_size())
                 ],
             )
-            assert isinstance(pw, (BaseView, MutableBox))
+            assert isinstance(pw, DataNode)
             src = pw.data
 
         src.realize()
@@ -5398,7 +5398,7 @@ class ExternKernel(InputsKernel):
             return x
         if (
             isinstance(x, TensorBox)
-            and isinstance(x.data, BaseView)
+            and isinstance(x.data, DataNode)
             and not isinstance(x.data, ReinterpretView)
             and is_storage_and_layout(x.unwrap_view())
             and not isinstance(x.unwrap_view().data, ExternKernelAlloc)  # type: ignore[attr-defined]
