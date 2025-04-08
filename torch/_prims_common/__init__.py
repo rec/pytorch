@@ -12,6 +12,7 @@ from typing import (
     Any,
     Callable,
     cast,
+    get_args,
     NamedTuple,
     Optional,
     overload,
@@ -59,7 +60,10 @@ NumberTypeType: TypeAlias = Union[type[bool], type[int], type[float], type[compl
 NumberType: TypeAlias = Union[bool, int, float, complex]
 RealNumberType: TypeAlias = Union[bool, int, float]
 
-Number = (bool, int, float, complex, torch.SymInt, torch.SymFloat, torch.SymBool)
+NumberTypeAnnotation: TypeAlias = Union[
+    bool, int, float, complex, torch.SymInt, torch.SymFloat, torch.SymBool
+]
+Number = get_args(NumberTypeAnnotation)
 # I don't call it Integral because numbers.Integral includes bool, but IntLike
 # does not
 Dim = int
