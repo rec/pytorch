@@ -1,0 +1,139 @@
+{
+  "blocks": [
+    {
+      "children": [
+        1,
+        2
+      ],
+      "display_name": "class TestMultiLinter",
+      "keyword_count": {
+        "class": 1
+      },
+      "line_count": 14,
+      "line_start": 39,
+      "op_count": {
+        "dedent": 3,
+        "indent": 1,
+        "name": 3,
+        "newline": 1,
+        "op": 3
+      },
+      "token_count": 11
+    },
+    {
+      "display_name": "def TestMultiLinter.test_all_files()",
+      "keyword_count": {
+        "def": 1,
+        "for": 1,
+        "in": 1
+      },
+      "line_count": 7,
+      "line_start": 40,
+      "op_count": {
+        "dedent": 1,
+        "indent": 1,
+        "name": 28,
+        "newline": 6,
+        "nl": 1,
+        "op": 39,
+        "string": 6
+      },
+      "token_count": 82
+    },
+    {
+      "display_name": "def TestMultiLinter.test_split_import()",
+      "keyword_count": {
+        "def": 1,
+        "for": 1,
+        "in": 1
+      },
+      "line_count": 6,
+      "line_start": 47,
+      "op_count": {
+        "dedent": 1,
+        "indent": 1,
+        "name": 19,
+        "newline": 4,
+        "nl": 2,
+        "op": 19
+      },
+      "token_count": 46
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "display_name": "class TestPythonInfo",
+      "keyword_count": {
+        "class": 1
+      },
+      "line_count": 11,
+      "line_start": 53,
+      "op_count": {
+        "dedent": 3,
+        "indent": 1,
+        "name": 3,
+        "newline": 1,
+        "op": 3
+      },
+      "token_count": 11
+    },
+    {
+      "display_name": "def TestPythonInfo.test_serialize_empty()",
+      "keyword_count": {
+        "def": 1
+      },
+      "line_count": 5,
+      "line_start": 54,
+      "op_count": {
+        "dedent": 1,
+        "indent": 1,
+        "name": 18,
+        "newline": 4,
+        "nl": 1,
+        "op": 39
+      },
+      "token_count": 64
+    },
+    {
+      "display_name": "def TestPythonInfo.test_serialize_this_file()",
+      "keyword_count": {
+        "def": 1
+      },
+      "line_count": 5,
+      "line_start": 59,
+      "op_count": {
+        "dedent": 1,
+        "indent": 1,
+        "name": 20,
+        "newline": 4,
+        "nl": 1,
+        "op": 27,
+        "string": 3
+      },
+      "token_count": 57
+    }
+  ],
+  "top": {
+    "comment_total_length": 20,
+    "display_name": "(module)",
+    "ignores": {
+      "mypy": {
+        "ignore-errors": 1
+      }
+    },
+    "keyword_count": {
+      "import": 1
+    },
+    "line_count": 2,
+    "line_start": 1,
+    "op_count": {
+      "comment": 1,
+      "name": 2,
+      "newline": 1,
+      "nl": 2
+    },
+    "token_count": 6
+  }
+}

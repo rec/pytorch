@@ -1,0 +1,135 @@
+{
+  "modules": {
+    "tools.test.multi_linter_testdata.project": {
+      "blocks": [
+        {
+          "display_name": "def important()",
+          "line_count": 5,
+          "line_start": 7,
+          "token_count": 12
+        },
+        {
+          "display_name": "def important.not_important()",
+          "line_count": 3,
+          "line_start": 8,
+          "token_count": 12
+        }
+      ],
+      "path": "tools/test/multi_linter_testdata/project/__init__.py",
+      "top": {
+        "comment_total_length": 20,
+        "display_name": "(module)",
+        "ignores": {
+          "mypy": {
+            "ignore-errors": 1
+          }
+        },
+        "line_start": 1,
+        "token_count": 2
+      }
+    },
+    "tools.test.multi_linter_testdata.project.one": {
+      "path": "tools/test/multi_linter_testdata/project/one/__init__.py",
+      "top": {
+        "display_name": "(module)"
+      }
+    },
+    "tools.test.multi_linter_testdata.project.two": {
+      "path": "tools/test/multi_linter_testdata/project/two/__init__.py",
+      "top": {
+        "display_name": "(module)"
+      }
+    },
+    "tools.test.multi_linter_testdata.project.two.five": {
+      "blocks": [
+        {
+          "display_name": "class Five",
+          "line_count": 6,
+          "line_start": 4,
+          "token_count": 8
+        },
+        {
+          "display_name": "def Five.__init__()",
+          "line_count": 3,
+          "line_start": 5,
+          "token_count": 12
+        },
+        {
+          "display_name": "def Five.do_it()",
+          "line_count": 2,
+          "line_start": 8,
+          "token_count": 12
+        }
+      ],
+      "path": "tools/test/multi_linter_testdata/project/two/five.py",
+      "top": {
+        "comment_total_length": 20,
+        "display_name": "(module)",
+        "ignores": {
+          "mypy": {
+            "ignore-errors": 1
+          }
+        },
+        "line_count": 1,
+        "line_start": 1,
+        "token_count": 3
+      }
+    },
+    "tools.test.multi_linter_testdata.project.two.seven": {
+      "blocks": [
+        {
+          "display_name": "class Seven",
+          "line_count": 8,
+          "line_start": 6,
+          "token_count": 8
+        },
+        {
+          "display_name": "def Seven.__init__()",
+          "line_count": 3,
+          "line_start": 7,
+          "token_count": 12
+        },
+        {
+          "display_name": "def Seven.do_it()",
+          "line_count": 4,
+          "line_start": 10,
+          "token_count": 14
+        },
+        {
+          "display_name": "def seven()",
+          "line_count": 14,
+          "line_start": 17,
+          "token_count": 23
+        },
+        {
+          "display_name": "class seven.Inner[1]",
+          "line_count": 5,
+          "line_start": 20,
+          "token_count": 14
+        },
+        {
+          "display_name": "class seven.Inner[2]",
+          "line_count": 4,
+          "line_start": 27,
+          "token_count": 13
+        }
+      ],
+      "outgoing_imports": [
+        "__future__.annotations"
+      ],
+      "path": "tools/test/multi_linter_testdata/project/two/seven.py",
+      "top": {
+        "comment_total_length": 20,
+        "display_name": "(module)",
+        "ignores": {
+          "mypy": {
+            "ignore-errors": 1
+          }
+        },
+        "line_count": 2,
+        "line_start": 1,
+        "token_count": 6
+      }
+    }
+  }
+}

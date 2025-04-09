@@ -4,7 +4,7 @@ import dataclasses as dc
 import itertools
 import token
 from enum import Enum
-from functools import cached_property, total_ordering
+from functools import cache, cached_property, total_ordering
 from typing import Any, Optional, TYPE_CHECKING
 from typing_extensions import Self
 
@@ -114,12 +114,10 @@ class Block:
         return not self.is_class and bool(_OVERRIDES.intersection(self.decorators))
 
     DATA_FIELDS = (
-        "category",
         "children",
         "decorators",
-        "display_name",
+        "display_name",  # includes category and full_name
         "docstring",
-        "full_name",
         "index",
         "is_local",
         "is_method",
@@ -128,9 +126,24 @@ class Block:
         "start_line",
     )
 
-    def as_data(self) -> dict[str, Any]:
+    def asdict(self) -> dict[str, Any]:
         d = {i: getattr(self, i) for i in self.DATA_FIELDS}
-        d["category"] = d["category"].value
+        return {k: v for k, v in d.items() if self._default().get(k) != v}
+
+    @classmethod
+    @cache
+    def _default(cls) -> dict[str, Any]:
+        block = cls(
+            category=cls.Category.CLASS,
+            tokens=(),
+            name="",
+            begin=-1,
+            indent=-1,
+            dedent=-1,
+            docstring="",
+        )
+        d = dc.asdict(block)
+        d.pop("category")
         return d
 
     @property

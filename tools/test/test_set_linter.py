@@ -69,6 +69,7 @@ class TestSetLinter(LinterTestCase):
 
     def test_match_braced_sets(self) -> None:
         TESTS: tuple[tuple[str, int], ...] = (
+            ("{1}", 1),
             ("{cast(int, inst.offset): inst for inst in instructions}", 0),
             ("", 0),
             ("{}", 0),

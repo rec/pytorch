@@ -73,11 +73,11 @@ class DocstringLinter(_linter.FileLinter):
 
         yield from (self._block_result(b, pf) for b in sorted(bad - gf))
 
-        def as_data(b: _linter.Block) -> dict[str, Any]:
+        def asdict(b: _linter.Block) -> dict[str, Any]:
             status = "grandfather" if b in gf else "bad" if b in bad else "good"
-            return {"status": status, **b.as_data()}
+            return {"status": status, **b.asdict()}
 
-        self.path_to_blocks[p] = [as_data(b) for b in blocks]
+        self.path_to_blocks[p] = [asdict(b) for b in blocks]
 
     def _error(self, pf: _linter.PythonFile, result: _linter.LintResult) -> None:
         self.path_to_errors[str(pf.path)] = [{str(result.line): result.name}]
@@ -186,10 +186,10 @@ class DocstringLinter(_linter.FileLinter):
 def make_recursive(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     def rec(i: int) -> dict[str, Any]:
         d = dict(blocks[i])
-        d["children"] = [rec(c) for c in d["children"]]
+        d["children"] = [rec(c) for c in d.get("children", ())]
         return d
 
-    return [rec(i) for i, b in enumerate(blocks) if b["parent"] is None]
+    return [rec(i) for i, b in enumerate(blocks) if b.get("parent") is None]
 
 
 def make_terse(
@@ -202,14 +202,14 @@ def make_terse(
     line_field_width = len(str(max_line))
 
     for b in blocks:
-        root = f"{b['category']} {b['full_name']}"
+        root = b["display_name"]
         for i in itertools.count():
             name = root + bool(i) * f"[{i + 1}]"
             if name not in result:
                 break
 
         d = {
-            "docstring_len": len(b["docstring"]),
+            "docstring_len": len(b.get("docstring", "")),
             "lines": b["line_count"],
             "status": b.get("status", "good"),
         }
@@ -222,7 +222,7 @@ def make_terse(
             d["line"] = start_line
             result[name] = d
 
-        if kids := b["children"]:
+        if kids := b.get("children", ()):
             if not all(isinstance(k, int) for k in kids):
                 assert all(isinstance(k, dict) for k in kids)
                 d["children"] = make_terse(kids)

@@ -37,6 +37,10 @@ class LinterTestCase(TestCase):
         self.assertExpected(path, r.replacement, "python")
         return r
 
+    @staticmethod
+    def dumps(d: dict) -> str:
+        return json.dumps(d, sort_keys=True, indent=2) + "\n"
+
     def _lint_test(self, path, args, mock_stdout):
         with self.subTest("from-command-line"):
             linter = self.LinterClass([str(path), *args])
@@ -50,7 +54,7 @@ class LinterTestCase(TestCase):
             replacement, results = linter._replace(pf)
 
             actual = [json.loads(d) for d in linter._display(pf, results)]
-            actual = json.dumps(actual, indent=2, sort_keys=True) + "\n"
+            actual = self.dumps(actual)
             self.assertExpected(path, actual, "json")
 
         return replacement, results, linter

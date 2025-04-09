@@ -141,7 +141,7 @@ def _dumps(d: dict) -> str:
 
 def _data(file=TEST_FILE):
     docstring_file = DocstringLinter.make_file(file)
-    return [b.as_data() for b in docstring_file.blocks]
+    return [b.asdict() for b in docstring_file.blocks]
 
 
 def _next_stdout(mock_stdout):
