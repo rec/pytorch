@@ -3,7 +3,7 @@ from __future__ import annotations
 import token
 from typing import NamedTuple, TYPE_CHECKING
 
-from . import EMPTY_TOKENS, ParseError
+from . import is_ignored_token, ParseError
 from .block import Block
 
 
@@ -31,10 +31,14 @@ def blocks(tokens: Sequence[TokenInfo]) -> BlocksResult:
     for i, parent in enumerate(blocks):
         for j in range(i + 1, len(blocks)):
             if parent.contains(child := blocks[j]):
+                # The last assigment is also the most recent parent
                 child.parent = i
-                parent.children.append(j)
             else:
                 break
+
+    for i, child in enumerate(blocks):
+        if child.parent is not None:
+            blocks[child.parent].children.append(i)
 
     for i, b in enumerate(blocks):
         b.index = i
@@ -68,7 +72,7 @@ def _docstring(tokens: Sequence[TokenInfo], start: int) -> str:
         tk = tokens[i]
         if tk.type == token.STRING:
             return tk.string
-        if tk.type not in EMPTY_TOKENS:
+        if is_ignored_token(tk):
             return ""
     return ""
 

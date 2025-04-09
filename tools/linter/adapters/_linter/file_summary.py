@@ -39,14 +39,14 @@ def _make_terse(
     line_field_width = len(str(max_line))
 
     for b in blocks:
-        root = f"{b['category']} {b['full_name']}"
+        root = b["display_name"]
         for i in itertools.count():
             name = root + bool(i) * f"[{i + 1}]"
             if name not in result:
                 break
 
         d = {
-            "docstring_len": len(b["docstring"]),
+            "docstring_len": len(b.get("docstring", "")),
             "lines": b["line_count"],
             "status": b.get("status", "good"),
         }
@@ -59,7 +59,7 @@ def _make_terse(
             d["line"] = start_line
             result[name] = d
 
-        if kids := b["children"]:
+        if kids := b.get("children", ()):
             if not all(isinstance(k, int) for k in kids):
                 assert all(isinstance(k, dict) for k in kids)
                 d["children"] = _make_terse(kids)

@@ -71,11 +71,11 @@ class DocstringLinter(_linter.FileLinter):
 
         yield from (self._block_result(b, pf) for b in sorted(bad - gf))
 
-        def as_data(b: _linter.Block) -> dict[str, Any]:
+        def asdict(b: _linter.Block) -> dict[str, Any]:
             status = "grandfather" if b in gf else "bad" if b in bad else "good"
-            return {"status": status, **b.as_data()}
+            return {"status": status, **b.asdict()}
 
-        self.path_to_blocks[p] = [as_data(b) for b in blocks]
+        self.path_to_blocks[p] = [asdict(b) for b in blocks]
 
     def _error(self, pf: _linter.PythonFile, result: _linter.LintResult) -> None:
         self.path_to_errors[str(pf.path)] = [{str(result.line): result.name}]

@@ -1,36 +1,34 @@
-from __future__ import annotations
-
 import token
+from collections.abc import Sequence
 from functools import cached_property
 from pathlib import Path
 from tokenize import generate_tokens, TokenInfo
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Union
 from typing_extensions import Self
 
-from . import EMPTY_TOKENS, NO_TOKEN, ParseError, ROOT
+from . import is_ignored_token, NO_TOKEN, ParseError, ROOT
 from .blocks import blocks
 from .sets import LineWithSets
 
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from .block import Block
 
 
 class PythonFile:
     contents: str
     lines: list[str]
-    path: Path | None
+    path: Optional[Path]
     linter_name: str
 
     def __init__(
         self,
         linter_name: str,
-        path: Path | None = None,
-        contents: str | None = None,
+        path: Optional[Path] = None,
+        contents: Optional[str] = None,
     ) -> None:
         self.linter_name = linter_name
+        assert not path or isinstance(path, Path)
         self.path = path and (path.relative_to(ROOT) if path.is_absolute() else path)
         if contents is None and path is not None:
             contents = path.read_text()
@@ -39,7 +37,7 @@ class PythonFile:
         self.lines = self.contents.splitlines(keepends=True)
 
     @classmethod
-    def make(cls, linter_name: str, pc: Path | str | None = None) -> Self:
+    def make(cls, linter_name: str, pc: Optional[Union[Path, str]] = None) -> Self:
         if isinstance(pc, Path):
             return cls(linter_name, path=pc)
         return cls(linter_name, contents=pc)
@@ -48,7 +46,7 @@ class PythonFile:
         return self.__class__(self.linter_name, self.path, contents)
 
     @cached_property
-    def omitted(self) -> OmittedLines:
+    def omitted(self) -> "OmittedLines":
         assert self.linter_name is not None
         return OmittedLines(self.lines, self.linter_name)
 
@@ -91,7 +89,9 @@ class PythonFile:
         it = (i for i, s in enumerate(self.lines) if not s.startswith("#"))
         return next(it, 0)
 
-    def __getitem__(self, i: int | slice) -> TokenInfo | Sequence[TokenInfo]:
+    def __getitem__(
+        self, i: Union[int, slice]
+    ) -> Union[TokenInfo, Sequence[TokenInfo]]:
         return self.tokens[i]
 
     def next_token(self, start: int, token_type: int, error: str) -> int:
@@ -105,7 +105,7 @@ class PythonFile:
             tk = self.tokens[i]
             if tk.type == token.STRING:
                 return tk.string
-            if tk.type not in EMPTY_TOKENS:
+            if is_ignored_token(tk):
                 return ""
         return ""
 
@@ -137,7 +137,7 @@ class PythonFile:
         return [t for t in tokens if not self.omitted([t])]
 
     @cached_property
-    def insert_import_line(self) -> int | None:
+    def insert_import_line(self) -> Optional[int]:
         froms, imports = self.import_lines
         for i in froms + imports:
             tl = self.token_lines[i]
@@ -152,7 +152,7 @@ class PythonFile:
         return [LineWithSets(tl) for tl in self.token_lines]
 
     @cached_property
-    def blocks(self) -> list[Block]:
+    def blocks(self) -> list["Block"]:
         res = blocks(self.tokens)
         self.errors.update(res.errors)
         return res.blocks
