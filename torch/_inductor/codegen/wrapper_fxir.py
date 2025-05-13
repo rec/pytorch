@@ -530,10 +530,10 @@ class FxConverter:
         """
 
         # Get FX nodes corresponding to the call args.
-        tensor_nodes = tuple(
-            self._generate_buffer(arg) for arg in kernel.inputs_as_nodes
-        )
-        args = tensor_nodes + tuple(kernel.constant_args)
+        assert ir.is_node_sequence(kernel.inputs)
+
+        tensor_nodes = tuple(self._generate_buffer(arg) for arg in kernel.inputs)
+        args = *tensor_nodes, *kernel.constant_args
 
         # Get the result buffer.
         # Some kernels write to a pre-existing output tensor via the "out" kwarg.

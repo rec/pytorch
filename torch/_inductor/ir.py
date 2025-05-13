@@ -23,7 +23,15 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import assert_never, Never, override, ParamSpec, Self, TypeAlias
+from typing_extensions import (
+    assert_never,
+    Never,
+    override,
+    ParamSpec,
+    Self,
+    TypeAlias,
+    TypeGuard,
+)
 from unittest.mock import patch
 
 import sympy
@@ -4911,14 +4919,20 @@ class CppTemplateBuffer(TemplateBuffer):
             return super().get_layout()
 
 
+def is_node_sequence(
+    nodes: Sequence[Union[IRNode, Sequence[IRNode]]],
+) -> TypeGuard[Sequence[IRNode]]:
+    return all(isinstance(n, IRNode) for n in nodes)
+
+
 @ir_dataclass(frozen=False)
 class InputsKernel(OperationBuffer):
     inputs: Sequence[Union[IRNode, Sequence[IRNode]]]
 
     @functools.cached_property
     def inputs_as_nodes(self) -> Sequence[IRNode]:
-        assert all(isinstance(i, IRNode) for i in self.inputs)
-        return cast(Sequence[IRNode], self.inputs)
+        assert is_node_sequence(self.inputs)
+        return self.inputs
 
     def get_read_writes(self) -> dependencies.ReadWrites:
         reads = OrderedSet[dependencies.Dep]()
@@ -6242,7 +6256,8 @@ class SubgraphBuffer(ExternKernel):
                 self.graph = graph
                 self.name = graph.name
 
-        outer_inputs = [t.codegen_reference() for t in self.inputs_as_nodes]
+        assert is_node_sequence(self.inputs)
+        outer_inputs = [t.codegen_reference() for t in self.inputs]
 
         wrapper.codegen_subgraph_with_flattened_outputs(
             CodegenGraph(self.subgraph),

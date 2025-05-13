@@ -1756,7 +1756,9 @@ class PythonWrapperCodegen(CodeGen):
 
     def codegen_multi_output(self, node: ir.MultiOutput):
         result_name = node.get_name()
-        arg_name = node.inputs_as_nodes[0].get_name()
+        input_node = node.inputs[0]
+        assert isinstance(input_node, ir.IRNode)
+        arg_name = input_node.get_name()
         self.writeline(MultiOutputLine(self, result_name, arg_name, node.indices))
 
     def codegen_dynamic_scalar(self, node):
