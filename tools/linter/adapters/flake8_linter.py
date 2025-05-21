@@ -15,10 +15,6 @@ from typing import Any, NamedTuple
 IS_WINDOWS: bool = os.name == "nt"
 
 
-def eprint(*args: Any, **kwargs: Any) -> None:
-    print(*args, file=sys.stderr, flush=True, **kwargs)
-
-
 class LintSeverity(str, Enum):
     ERROR = "error"
     WARNING = "warning"
