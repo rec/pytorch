@@ -12,6 +12,7 @@ from typing import Any, TYPE_CHECKING
 
 _FILE = Path(__file__).absolute()
 _PATH = [Path(p).absolute() for p in sys.path]
+VERBOSE = False
 
 
 if TYPE_CHECKING or _FILE.parent not in _PATH:
@@ -26,9 +27,7 @@ _COMMITS_COMMAND = f"git log -{_COMMIT_IDS_TO_REPORT} --pretty=format:%h"
 # TODO: Count `from __future__ import annotations` somewhere!
 # This line can be found in `outgoing_imports`.
 #
-# TODO: count top-of-file "type: ignores" particularly
-#
-# TODO: type-ignores report (then and now)
+# TODO type-ignores report (then and now)
 #
 # TODO: __all__ pull requester: for each file or directory
 #   * fill in or improve the __all__
@@ -75,7 +74,8 @@ class AllFiles:
             for f in files:
                 try:
                     d = _linter.MultiFile(f).asdict()
-                    print(f, file=sys.stderr)
+                    if VERBOSE:
+                        print(f, file=sys.stderr)
                 except Exception as e:
                     print(file=sys.stderr)
                     traceback.print_exc()

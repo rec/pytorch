@@ -9,6 +9,8 @@
       "keyword_count": {
         "class": 1
       },
+      "line_count": 14,
+      "line_start": 39,
       "op_count": {
         "dedent": 3,
         "indent": 1,
@@ -25,6 +27,8 @@
         "for": 1,
         "in": 1
       },
+      "line_count": 7,
+      "line_start": 40,
       "op_count": {
         "dedent": 1,
         "indent": 1,
@@ -43,6 +47,8 @@
         "for": 1,
         "in": 1
       },
+      "line_count": 6,
+      "line_start": 47,
       "op_count": {
         "dedent": 1,
         "indent": 1,
@@ -62,6 +68,8 @@
       "keyword_count": {
         "class": 1
       },
+      "line_count": 11,
+      "line_start": 53,
       "op_count": {
         "dedent": 3,
         "indent": 1,
@@ -76,6 +84,8 @@
       "keyword_count": {
         "def": 1
       },
+      "line_count": 5,
+      "line_start": 54,
       "op_count": {
         "dedent": 1,
         "indent": 1,
@@ -91,6 +101,8 @@
       "keyword_count": {
         "def": 1
       },
+      "line_count": 5,
+      "line_start": 59,
       "op_count": {
         "dedent": 1,
         "indent": 1,
@@ -114,6 +126,8 @@
     "keyword_count": {
       "import": 1
     },
+    "line_count": 2,
+    "line_start": 1,
     "op_count": {
       "comment": 1,
       "name": 2,

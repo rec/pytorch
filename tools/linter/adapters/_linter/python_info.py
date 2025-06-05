@@ -86,8 +86,10 @@ class ScopeInfo(AsData):
     def apply_token(self, tok: TokenInfo) -> None:
         self.token_count += 1
         s, t = tok.string, tok.type
-        # STOPPED HERE: need to do set_line_count!
-        # self.line_count = 1 + end.end[0] - begin.start[0]
+        end = tok.end[0]
+        if self.line_start == -1:
+            self.line_start = tok.start[0]
+        self.line_count = end - self.line_start
 
         op_name = INVERSE_TOKEN_TYPES.get(t) or token.tok_name[t].lower()
         self.op_count[op_name] += 1
