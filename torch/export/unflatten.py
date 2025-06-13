@@ -793,7 +793,7 @@ def _inplace_buffer_and_input_mutations(
     output_node.args = ((user_outputs),)
 
 
-def _is_prefix(candidate, target):
+def _is_prefix(candidate, target) -> bool:
     """Check whether `candidate` is a prefix of `target`."""
     return len(candidate) < len(target) and target[: len(candidate)] == candidate
 
@@ -1455,7 +1455,7 @@ class _IVals:
         # for each fqn, set of node names corresponding to intermediate values
         self.node_names_by_fqn = defaultdict(set)
 
-    def _is_mutable(self, target):
+    def _is_mutable(self, target) -> bool:
         if isinstance(target, torch._ops.OpOverload):
             return target._schema.is_mutable
         return False

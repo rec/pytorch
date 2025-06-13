@@ -113,7 +113,7 @@ def impl(func, in_spec, *flat_args):
     # I'm not sure if we need to return (flat_output, spec) or just (flat_output,):
     # in the latter case the tracers need to carry out the output specs
     # (they need to know how to reconstruct the object from just the flat_output).
-    def is_valid_output(x):
+    def is_valid_output(x) -> bool:
         if isinstance(x, (tuple, list)):
             return all(map(is_valid_output, x))
         return is_graphable(x)

@@ -166,7 +166,7 @@ class ExpandedWeight(torch.Tensor):
         return self.orig_weight.device
 
     @property
-    def is_cuda(self):
+    def is_cuda(self) -> bool:
         return self.orig_weight.is_cuda
 
     def data_ptr(self):

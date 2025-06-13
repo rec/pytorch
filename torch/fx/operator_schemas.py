@@ -309,7 +309,7 @@ def type_matches(signature_type: Any, argument_type: Any):
         if getattr(argument_type, "__origin__", None) is list:
             return issubclass(argument_type.__args__[0], sig_el_type)
 
-        def is_homogeneous_tuple(t):
+        def is_homogeneous_tuple(t) -> bool:
             if getattr(t, "__origin__", None) is not tuple:
                 return False
             contained = t.__args__

@@ -36,7 +36,7 @@ class FilterIterDataPipe(IterDataPipe[_T_co]):
     Example:
         >>> # xdoctest: +SKIP
         >>> from torchdata.datapipes.iter import IterableWrapper
-        >>> def is_even(n):
+        >>> def is_even(n) -> bool:
         ...     return n % 2 == 0
         >>> dp = IterableWrapper(range(5))
         >>> filter_dp = dp.filter(filter_fn=is_even)

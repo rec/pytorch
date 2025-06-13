@@ -186,7 +186,7 @@ class OrderedImporter(Importer):
     def __init__(self, *args):
         self._importers: list[Importer] = list(args)
 
-    def _is_torchpackage_dummy(self, module):
+    def _is_torchpackage_dummy(self, module) -> bool:
         """Returns true iff this module is an empty PackageNode in a torch.package.
 
         If you intern `a.b` but never use `a` in your code, then `a` will be an

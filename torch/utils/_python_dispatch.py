@@ -119,7 +119,7 @@ class TorchDispatchMode:
         return instance
 
     @classmethod
-    def is_infra_mode(cls):
+    def is_infra_mode(cls) -> bool:
         return False
 
 
@@ -497,7 +497,7 @@ and output of type {type(ret)}. But expected types to match."""
             assert isinstance(ret, torch.Tensor), f"type: {type(ret)}"
             torch._functionalize_unsafe_set(ret, arg)
 
-    def is_read_only_alias_match(arg, ret):
+    def is_read_only_alias_match(arg, ret) -> bool:
         shared_aliases = arg.alias_set & ret.alias_set
         return len(shared_aliases) > 0 and not arg.is_write
 

@@ -167,7 +167,7 @@ def mark_subclass_constructor_exportable_experimental(constructor_subclass):
             # ...
     """
 
-    def _is_init(fn):
+    def _is_init(fn) -> bool:
         return callable(fn) and fn.__name__ == "__init__"
 
     if not _is_init(constructor_subclass):

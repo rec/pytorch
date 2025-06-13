@@ -198,11 +198,11 @@ class _StorageBase:
         raise NotImplementedError
 
     @property
-    def is_cuda(self):
+    def is_cuda(self) -> bool:
         raise NotImplementedError
 
     @property
-    def is_hpu(self):
+    def is_hpu(self) -> bool:
         raise NotImplementedError
 
     @classmethod
@@ -350,7 +350,7 @@ class _StorageBase:
         """Casts this storage to float8_e4m3fnuz type"""
         return self._to(torch.float8_e4m3fnuz)
 
-    def is_pinned(self, device: Union[str, torch.device] = "cuda"):
+    def is_pinned(self, device: Union[str, torch.device] = "cuda") -> bool:
         r"""Determine whether the CPU storage is already pinned on device.
 
         Args:
@@ -466,11 +466,11 @@ class UntypedStorage(torch._C.StorageBase, _StorageBase):
         return super().__getitem__(*args, **kwargs)
 
     @property
-    def is_cuda(self):
+    def is_cuda(self) -> bool:
         return self.device.type == "cuda"
 
     @property
-    def is_hpu(self):
+    def is_hpu(self) -> bool:
         return self.device.type == "hpu"
 
     @property
@@ -635,7 +635,7 @@ def _set_always_warn_typed_storage_removal(always_warn):
 def _warn_typed_storage_removal(stacklevel=2):
     global _always_warn_typed_storage_removal
 
-    def is_first_time():
+    def is_first_time() -> bool:
         if not hasattr(_warn_typed_storage_removal, "has_warned"):
             return True
         else:
@@ -870,12 +870,12 @@ class TypedStorage:
                 raise RuntimeError(arg_error_msg + "\nToo many positional arguments")
 
     @property
-    def is_cuda(self):
+    def is_cuda(self) -> bool:
         _warn_typed_storage_removal()
         return self._untyped_storage.device.type == "cuda"
 
     @property
-    def is_hpu(self):
+    def is_hpu(self) -> bool:
         _warn_typed_storage_removal()
         return self._untyped_storage.device.type == "hpu"
 
@@ -1153,7 +1153,7 @@ class TypedStorage:
         _warn_typed_storage_removal()
         return self._new_wrapped_storage(self._untyped_storage.cpu())
 
-    def is_pinned(self, device: Union[str, torch.device] = "cuda"):
+    def is_pinned(self, device: Union[str, torch.device] = "cuda") -> bool:
         r"""Determine whether the CPU TypedStorage is already pinned on device.
 
         Args:
@@ -1440,12 +1440,12 @@ class TypedStorage:
     def _share_cuda_(self, *args, **kwargs):
         return self._untyped_storage._share_cuda_(*args, **kwargs)
 
-    def is_shared(self):
+    def is_shared(self) -> bool:
         _warn_typed_storage_removal()
         return self._is_shared()
 
     # For internal use only, to avoid deprecation warning
-    def _is_shared(self):
+    def _is_shared(self) -> bool:
         return self._untyped_storage.is_shared()
 
     @classmethod

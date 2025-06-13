@@ -254,7 +254,7 @@ class Verifier(metaclass=_VerifierMeta):
 
                     attr = getattr_recursive(mod, node.target)
                     if isinstance(attr, torch.nn.Module):
-                        def _is_type(name, ty):
+                        def _is_type(name, ty) -> bool:
                             return isinstance(getattr(attr, name, None), ty)
                         if type(attr).__name__ == "LoweredBackendModule":
                             if _is_type("backend_id", str) \

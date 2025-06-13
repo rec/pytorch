@@ -36,7 +36,7 @@ __all__ = [
 ]
 
 
-def is_built():
+def is_built() -> bool:
     r"""
     Return whether PyTorch is built with CUDA support.
 

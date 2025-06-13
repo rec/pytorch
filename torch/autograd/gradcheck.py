@@ -31,7 +31,7 @@ class GradcheckError(RuntimeError):
     r"""Error raised by :func:`gradcheck` and :func:`gradgradcheck`."""
 
 
-def _is_sparse_compressed_tensor(obj: torch.Tensor):
+def _is_sparse_compressed_tensor(obj: torch.Tensor) -> bool:
     return obj.layout in {
         torch.sparse_csr,
         torch.sparse_csc,
@@ -40,11 +40,11 @@ def _is_sparse_compressed_tensor(obj: torch.Tensor):
     }
 
 
-def _is_sparse_any_tensor(obj: torch.Tensor):
+def _is_sparse_any_tensor(obj: torch.Tensor) -> bool:
     return _is_sparse_compressed_tensor(obj) or obj.layout is torch.sparse_coo
 
 
-def _is_float_or_complex_tensor(obj):
+def _is_float_or_complex_tensor(obj) -> bool:
     return is_tensor_like(obj) and (obj.is_floating_point() or obj.is_complex())
 
 

@@ -93,10 +93,10 @@ class QuantizeHandler(ABC):  # noqa: B024
         """
         return False
 
-    def is_custom_module(self):
+    def is_custom_module(self) -> bool:
         return self.is_custom_module_
 
-    def is_standalone_module(self):
+    def is_standalone_module(self) -> bool:
         return self.is_standalone_module_
 
 

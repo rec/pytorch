@@ -757,7 +757,7 @@ class _PackageResourceReader:
             )
         raise FileNotFoundError
 
-    def is_resource(self, name):
+    def is_resource(self, name) -> bool:
         path = self.importer._zipfile_path(self.fullname, name)
         return self.importer.zip_reader.has_record(path)
 

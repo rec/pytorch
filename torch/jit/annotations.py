@@ -137,13 +137,13 @@ def get_signature(fn, rcb, loc, is_method):
     return signature
 
 
-def is_function_or_method(the_callable):
+def is_function_or_method(the_callable) -> bool:
     # A stricter version of `inspect.isroutine` that does not pass for built-in
     # functions
     return inspect.isfunction(the_callable) or inspect.ismethod(the_callable)
 
 
-def is_vararg(the_callable):
+def is_vararg(the_callable) -> bool:
     if not is_function_or_method(the_callable) and callable(the_callable):  # noqa: B004
         # If `the_callable` is a class, de-sugar the call so we can still get
         # the signature
@@ -367,7 +367,7 @@ def get_enum_value_type(e: type[enum.Enum], loc):
     return res
 
 
-def is_tensor(ann):
+def is_tensor(ann) -> bool:
     if issubclass(ann, torch.Tensor):
         return True
 

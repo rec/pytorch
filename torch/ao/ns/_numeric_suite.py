@@ -391,7 +391,7 @@ def prepare_model_with_stubs(
         q_module._modules[key] = value
 
 
-def _is_identical_module_type(mod1, mod2):
+def _is_identical_module_type(mod1, mod2) -> bool:
     # Compare if two modules have the same dtype
     mod1_module_types = [type(mod) for mod in mod1.modules()]
     mod2_module_types = [type(mod) for mod in mod2.modules()]

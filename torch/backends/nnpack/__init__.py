@@ -8,7 +8,7 @@ from torch.backends import __allow_nonbracketed_mutation, ContextProp, PropModul
 __all__ = ["is_available", "flags", "set_flags"]
 
 
-def is_available():
+def is_available() -> bool:
     r"""Return whether PyTorch is built with NNPACK support."""
     return torch._nnpack_available()
 

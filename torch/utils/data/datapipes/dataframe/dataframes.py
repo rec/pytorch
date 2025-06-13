@@ -137,7 +137,7 @@ class Capture:
         self.ctx["operations"].append(t)
         return var
 
-    def _is_context_empty(self):
+    def _is_context_empty(self) -> bool:
         return len(self.ctx["operations"]) == 0 and len(self.ctx["variables"]) == 0
 
     def apply_ops_2(self, dataframe):
@@ -447,7 +447,7 @@ class DataFrameTracer(CaptureDataFrameWithDataPipeOps, IterDataPipe):  # type: i
     def set_shuffle_settings(self, *args, **kwargs):
         pass
 
-    def is_shardable(self):
+    def is_shardable(self) -> bool:
         return False
 
     def __init__(self, source_datapipe, schema_df=None):

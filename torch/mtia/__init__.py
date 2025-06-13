@@ -54,7 +54,7 @@ def init():
     _lazy_init()
 
 
-def is_initialized():
+def is_initialized() -> bool:
     r"""Return whether PyTorch's MTIA state has been initialized."""
     return _initialized and not _is_in_bad_fork()
 

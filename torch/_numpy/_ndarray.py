@@ -406,7 +406,7 @@ class ndarray:
     def __complex__(self):
         return complex(self.tensor)
 
-    def is_integer(self):
+    def is_integer(self) -> bool:
         try:
             v = self.tensor.item()
             result = int(v) == v

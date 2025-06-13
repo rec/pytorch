@@ -70,7 +70,7 @@ class _remote_device:
                 raise ValueError(PARSE_ERROR)
 
     @staticmethod
-    def _is_valid_local_device(device):
+    def _is_valid_local_device(device) -> bool:
         # Check for torch.device
         try:
             torch.device(device)

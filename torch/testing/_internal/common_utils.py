@@ -1349,7 +1349,7 @@ IS_X86 = platform.machine() in ('x86_64', 'i386')
 IS_ARM64 = platform.machine() in ('arm64', 'aarch64')
 IS_S390X = platform.machine() == "s390x"
 
-def is_avx512_vnni_supported():
+def is_avx512_vnni_supported() -> bool:
     if sys.platform != 'linux':
         return False
     with open("/proc/cpuinfo", encoding="ascii") as f:
@@ -1398,7 +1398,7 @@ else:
             yield d
 
 
-def is_privateuse1_backend_available():
+def is_privateuse1_backend_available() -> bool:
     privateuse1_backend_name = torch._C._get_privateuse1_backend_name()
     privateuse1_backend_module = getattr(torch, privateuse1_backend_name, None)
     return (is_available := getattr(privateuse1_backend_module, "is_available", None)) and is_available()
@@ -2336,7 +2336,7 @@ def iter_indices(tensor):
     return product(*(range(s) for s in tensor.size()))
 
 
-def is_iterable(obj):
+def is_iterable(obj) -> bool:
     try:
         iter(obj)
         return True
@@ -2344,7 +2344,7 @@ def is_iterable(obj):
         return False
 
 
-def is_iterable_of_tensors(iterable, include_empty=False):
+def is_iterable_of_tensors(iterable, include_empty=False) -> bool:
     """ Returns True if iterable is an iterable of tensors and False o.w.
 
         If the iterable is empty, the return value is :attr:`include_empty`
@@ -5043,7 +5043,7 @@ def coalescedonoff(f):
     return wrapped
 
 
-def is_coalesced_indices(s):
+def is_coalesced_indices(s) -> bool:
     indices = s._indices()
     hash_coeffs = (1,) + s.shape[s.sparse_dim() - 1:0:-1]
     hash_indices = torch.tensor(hash_coeffs, device=s.device).cumprod(-1).flip(-1)
@@ -5318,7 +5318,7 @@ class TestGradients(TestCase):
         if not op.supports_dtype(dtype, torch.device(device).type):
             self.skipTest(f"Skipped! {op.name} does not support dtype {str(dtype)}")
 
-        def is_inplace(variant):
+        def is_inplace(variant) -> bool:
             if hasattr(variant, "__wrapped__"):
                 return variant.__wrapped__ is op.get_inplace()
             return variant is op.get_inplace()

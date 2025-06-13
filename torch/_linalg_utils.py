@@ -7,7 +7,7 @@ import torch
 from torch import Tensor
 
 
-def is_sparse(A):
+def is_sparse(A) -> bool:
     """Check if tensor A is a sparse tensor"""
     if isinstance(A, torch.Tensor):
         return A.layout == torch.sparse_coo

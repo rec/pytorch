@@ -1381,7 +1381,7 @@ class ReduceLROnPlateau(LRScheduler):
     def in_cooldown(self):  # noqa: D102
         return self.cooldown_counter > 0
 
-    def is_better(self, a, best):  # noqa: D102
+    def is_better(self, a, best) -> bool:  # noqa: D102
         if self.mode == "min" and self.threshold_mode == "rel":
             rel_epsilon = 1.0 - self.threshold
             return a < best * rel_epsilon

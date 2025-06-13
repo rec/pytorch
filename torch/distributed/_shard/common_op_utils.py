@@ -17,7 +17,7 @@ def _basic_validation(op, args=(), kwargs=None):
     # Validate types
     has_distributed_tensor = False
 
-    def is_distributed_tensor(e):
+    def is_distributed_tensor(e) -> bool:
         nonlocal has_distributed_tensor
         if isinstance(e, ShardedTensor):
             has_distributed_tensor = True

@@ -123,7 +123,7 @@ class NotView(ViewInfo):
         return bases_list[self.base_index]
 
 
-def is_alias(base, tensor):
+def is_alias(base, tensor) -> bool:
     from torch.fx.experimental.symbolic_shapes import statically_known_true, sym_eq
 
     return all(

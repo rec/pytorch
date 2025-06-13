@@ -112,7 +112,7 @@ class DecorateInfo:
             for dtype in self.dtypes:
                 assert isinstance(dtype, torch.dtype)
 
-    def is_active(self, cls_name, test_name, device_type, dtype, param_kwargs):
+    def is_active(self, cls_name, test_name, device_type, dtype, param_kwargs) -> bool:
         return (
             self.active_if
             and (self.cls_name is None or self.cls_name == cls_name)

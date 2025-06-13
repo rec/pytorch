@@ -1935,7 +1935,7 @@ class AffineQuantizedObserverBase(ABC, torch.nn.Module):
             model.graph.erase_node(observer_node)
 
 
-def _is_observer_script_module(mod, obs_type_name):
+def _is_observer_script_module(mod, obs_type_name) -> bool:
     """Returns true if given mod is an instance of Observer script module."""
     if isinstance(mod, torch.jit.RecursiveScriptModule):
         # qualified name looks like '__torch__.torch.ao.quantization.observer.___torch_mangle_2.MinMaxObserver'
@@ -1948,7 +1948,7 @@ def _is_observer_script_module(mod, obs_type_name):
 # Experimental Affine Quantization Feature END
 
 
-def _is_activation_post_process(module):
+def _is_activation_post_process(module) -> bool:
     return isinstance(
         module,
         (
@@ -1959,7 +1959,7 @@ def _is_activation_post_process(module):
     ) or _is_observer_script_module(module, "quantization.observer")
 
 
-def _is_per_channel_script_obs_instance(module):
+def _is_per_channel_script_obs_instance(module) -> bool:
     if isinstance(module, torch.jit.RecursiveScriptModule):
         return _is_observer_script_module(
             module, "quantization.observer.PerChannelMinMaxObserver"

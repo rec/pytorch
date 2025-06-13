@@ -491,7 +491,7 @@ def tensor_attr_unsupported_getter(func, *args, **kwargs):
 
 
 @register_jagged_func(torch.ops.aten.is_contiguous.default, "self: jt_all")
-def is_contiguous_general(func, *args, **kwargs):
+def is_contiguous_general(func, *args, **kwargs) -> bool:
     from torch._prims_common import is_contiguous_for_memory_format
 
     _, new_kwargs = normalize_function(  # type: ignore[misc]
@@ -1385,7 +1385,7 @@ def _pin_memory_default(func, *args, **kwargs):
 
 
 @register_jagged_func(torch.ops.aten.is_pinned.default, "self: jt, device: any?")
-def is_pinned_default(func, *args, **kwargs):
+def is_pinned_default(func, *args, **kwargs) -> bool:
     _, new_kwargs = normalize_function(  # type: ignore[misc]
         func, args=args, kwargs=kwargs, normalize_to_only_use_kwargs=True
     )
@@ -1398,7 +1398,7 @@ def is_pinned_default(func, *args, **kwargs):
 @register_jagged_func(
     torch.ops.aten.is_same_size.default, "self: jt_all, other: jt_all"
 )
-def is_same_size_default(func, *args, **kwargs):
+def is_same_size_default(func, *args, **kwargs) -> bool:
     return args[0]._size == args[1]._size
 
 

@@ -227,7 +227,7 @@ def _mark_nodes_as_annotated(nodes: list[Node]):
             node.meta[QUANT_ANNOTATION_KEY]._annotated = True
 
 
-def _is_node_annotated(_node):
+def _is_node_annotated(_node) -> bool:
     """
     return True if the node is annotated, otherwise return False
     """
@@ -237,7 +237,7 @@ def _is_node_annotated(_node):
     )
 
 
-def _is_any_annotated(nodes: list[Node]):
+def _is_any_annotated(nodes: list[Node]) -> bool:
     """
     Given a list of nodes (that represents an operator pattern),
     check if any of the node is annotated, return True if any of the node
@@ -246,7 +246,7 @@ def _is_any_annotated(nodes: list[Node]):
     return any(_is_node_annotated(node) for node in nodes)
 
 
-def _is_all_annotated(nodes: list[Node]):
+def _is_all_annotated(nodes: list[Node]) -> bool:
     """
     Given a list of nodes (that represents an operator pattern),
     return True if all of the node is annotated, otherwise return False.
@@ -254,7 +254,7 @@ def _is_all_annotated(nodes: list[Node]):
     return all(_is_node_annotated(node) for node in nodes)
 
 
-def _is_quantized_op_pt2e(node: torch.fx.Node):
+def _is_quantized_op_pt2e(node: torch.fx.Node) -> bool:
     """
     Used for pt2e flow to check if the node is a quantized node:
     Case1: the node has been annotated as output node of a fusion pattern.
@@ -1293,7 +1293,7 @@ class X86InductorQuantizer(Quantizer):
             and (node.op == "call_function")
         ):
 
-            def is_all_inputs_connected_to_quantized_op(input_nodes):
+            def is_all_inputs_connected_to_quantized_op(input_nodes) -> bool:
                 # Ensure all the inputs connect to fusion pattern or quantized node
                 for input_node in input_nodes:
                     if not _is_quantized_op_pt2e(input_node):

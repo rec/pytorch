@@ -347,13 +347,13 @@ class MaskedTensor(torch.Tensor):
     def get_mask(self):
         return self._masked_mask
 
-    def is_sparse_coo(self):
+    def is_sparse_coo(self) -> bool:
         return self.layout == torch.sparse_coo
 
-    def is_sparse_csr(self):  # type: ignore[override]
+    def is_sparse_csr(self) -> bool:
         return self.layout == torch.sparse_csr
 
     # Update later to support more sparse layouts
     @property
-    def is_sparse(self):
+    def is_sparse(self) -> bool:
         return self.is_sparse_coo() or self.is_sparse_csr()

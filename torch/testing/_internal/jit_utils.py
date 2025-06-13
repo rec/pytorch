@@ -888,6 +888,6 @@ def get_traced_sample_variant_pairs(device, dtype, op):
     return outputs
 
 # types.LambdaType gave false positives
-def is_lambda(lamb):
+def is_lambda(lamb) -> bool:
     LAMBDA = lambda: 0  # noqa: E731
     return isinstance(lamb, type(LAMBDA)) and lamb.__name__ == LAMBDA.__name__

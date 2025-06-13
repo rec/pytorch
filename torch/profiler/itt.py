@@ -14,7 +14,7 @@ except ImportError:
             )
 
         @staticmethod
-        def is_available():
+        def is_available() -> bool:
             return False
 
         rangePush = _fail
@@ -27,7 +27,7 @@ except ImportError:
 __all__ = ["is_available", "range_push", "range_pop", "mark", "range"]
 
 
-def is_available():
+def is_available() -> bool:
     """
     Check if ITT feature is available or not
     """

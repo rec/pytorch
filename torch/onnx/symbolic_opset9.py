@@ -628,7 +628,7 @@ def addmm(g: jit_utils.GraphContext, self, mat1, mat2, beta, alpha):
     mat1_rank = symbolic_helper._get_tensor_rank(mat1)
     mat2_rank = symbolic_helper._get_tensor_rank(mat2)
 
-    def is_not_none_nor(v, u):
+    def is_not_none_nor(v, u) -> bool:
         return v is not None and v != u
 
     if scalar_type is not None and (
@@ -3901,7 +3901,7 @@ def convert_element_type(g: jit_utils.GraphContext, self, *args):
 
 @_onnx_symbolic("aten::to")
 def to(g: jit_utils.GraphContext, self, *args):
-    def is_aten_to_device_only(args):
+    def is_aten_to_device_only(args) -> bool:
         if len(args) == 4:
             # aten::to(Tensor, Device, bool, bool, memory_format)
             return (
@@ -5070,7 +5070,7 @@ def log2(g: jit_utils.GraphContext, self):
 
 
 @_onnx_symbolic("aten::is_floating_point")
-def is_floating_point(g: jit_utils.GraphContext, self):
+def is_floating_point(g: jit_utils.GraphContext, self) -> bool:
     if symbolic_helper._is_fp(self):
         return g.op("Constant", value_t=torch.BoolTensor([1]))
     return g.op("Constant", value_t=torch.BoolTensor([0]))
@@ -6255,7 +6255,7 @@ def broadcast_tensors(g: jit_utils.GraphContext, self):
 
 
 @_onnx_symbolic("aten::is_pinned")
-def is_pinned(g: jit_utils.GraphContext, self, device=None):
+def is_pinned(g: jit_utils.GraphContext, self, device=None) -> bool:
     # Unused by ONNX.
     return None
 

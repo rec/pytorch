@@ -581,7 +581,7 @@ Fused version of `default_per_channel_weight_fake_quant`, with the 8-bit values 
 """
 
 
-def _is_fake_quant_script_module(mod):
+def _is_fake_quant_script_module(mod) -> bool:
     """Return true if given mod is an instance of FakeQuantize script module."""
     if isinstance(mod, torch.jit.RecursiveScriptModule):
         # qualified name looks like '__torch__.torch.ao.quantization.fake_quantize.___torch_mangle_2.FakeQuantize'

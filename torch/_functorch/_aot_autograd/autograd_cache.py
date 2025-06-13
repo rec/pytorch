@@ -151,7 +151,7 @@ def check_node_safe(node: Node):
         "einops.einops.repeat",
     )
 
-    def is_public_torch_api(target):
+    def is_public_torch_api(target) -> bool:
         # Don't blindly allow private functions in the torch namespace
         is_private = target.__name__.startswith("_")
 
@@ -159,7 +159,7 @@ def check_node_safe(node: Node):
             getattr(target, "__module__", None) in SAFE_TORCH_MODULES and not is_private
         )
 
-    def is_safe_torch_function(target):
+    def is_safe_torch_function(target) -> bool:
         """Allowlisted torch functions"""
         function_name = f"{target.__module__}.{target.__name__}"
         # Allow torch.autograd.function.FunctionCtx if custom autograd functions are allowed
@@ -177,7 +177,7 @@ def check_node_safe(node: Node):
             or function_name in torch._inductor.config.unsafe_marked_cacheable_functions
         )
 
-    def is_cacheable_function(target):
+    def is_cacheable_function(target) -> bool:
         if isinstance(target, (torch._ops.OpOverload, torch._ops.OpOverloadPacket)):
             return True
         if is_public_torch_api(target):
@@ -196,7 +196,7 @@ def check_node_safe(node: Node):
             return True
         return False
 
-    def is_tensor(target):
+    def is_tensor(target) -> bool:
         # Tensors always have example values in meta field
         return "example_value" in target.meta
 

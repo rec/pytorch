@@ -457,7 +457,7 @@ _is_inside_opcheck_mode = threading.local()
 _is_inside_opcheck_mode.value = False
 
 
-def is_inside_opcheck_mode():
+def is_inside_opcheck_mode() -> bool:
     return _is_inside_opcheck_mode.value
 
 

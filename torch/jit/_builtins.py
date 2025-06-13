@@ -140,7 +140,7 @@ def _gen_torch_functional_registered_ops():
 _functional_registered_ops = _gen_torch_functional_registered_ops()
 
 
-def _is_special_functional_bound_op(fn):
+def _is_special_functional_bound_op(fn) -> bool:
     return fn in _functional_registered_ops
 
 

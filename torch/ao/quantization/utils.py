@@ -152,11 +152,11 @@ def get_combined_dict(default_dict, additional_dict):
     return d
 
 
-def is_per_tensor(qscheme):
+def is_per_tensor(qscheme) -> bool:
     return qscheme == torch.per_tensor_affine or qscheme == torch.per_tensor_symmetric
 
 
-def is_per_channel(qscheme):
+def is_per_channel(qscheme) -> bool:
     return qscheme in [
         torch.per_channel_affine,
         torch.per_channel_affine_float_qparams,

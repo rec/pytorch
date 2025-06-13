@@ -3,7 +3,7 @@
 import torch
 
 
-def is_available():
+def is_available() -> bool:
     return hasattr(torch._C, "_dist_autograd_init")
 
 

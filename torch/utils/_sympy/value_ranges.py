@@ -708,7 +708,7 @@ class SymPyValueRangeAnalysis:
         return cls.mod(cls.floordiv(a, b), c)
 
     @classmethod
-    def is_non_overlapping_and_dense_indicator(cls, *args):
+    def is_non_overlapping_and_dense_indicator(cls, *args) -> bool:
         return ValueRanges.unknown_int()
 
     @classmethod

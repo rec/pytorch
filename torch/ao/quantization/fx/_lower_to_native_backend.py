@@ -41,7 +41,7 @@ QOP_TO_ARG_NAMES_TO_SKIP = {
 }
 
 
-def _is_node_in_list(node, modules, func_list, method_list, module_type_list):
+def _is_node_in_list(node, modules, func_list, method_list, module_type_list) -> bool:
     is_call_function = node.op == "call_function" and node.target in func_list
     is_call_method = node.op == "call_method" and node.target in method_list
     is_call_module = (
@@ -50,7 +50,7 @@ def _is_node_in_list(node, modules, func_list, method_list, module_type_list):
     return is_call_function, is_call_method, is_call_module
 
 
-def is_fixed_qparams_node(node, modules):
+def is_fixed_qparams_node(node, modules) -> bool:
     func_list = [
         torch.nn.functional.hardsigmoid,
         torch.nn.functional.sigmoid,
@@ -74,7 +74,7 @@ def is_fixed_qparams_node(node, modules):
     return _is_node_in_list(node, modules, func_list, method_list, module_type_list)
 
 
-def is_default_node(node, modules):
+def is_default_node(node, modules) -> bool:
     func_list = [
         torch.nn.functional.elu,
         torch.nn.functional.hardswish,
@@ -105,7 +105,7 @@ def is_default_node(node, modules):
     return _is_node_in_list(node, modules, func_list, method_list, module_type_list)
 
 
-def is_copy_node(node, modules):
+def is_copy_node(node, modules) -> bool:
     func_list = [
         torch.adaptive_avg_pool1d,
         torch.nn.functional.adaptive_avg_pool2d,
@@ -153,7 +153,7 @@ def is_copy_node(node, modules):
     return _is_node_in_list(node, modules, func_list, method_list, module_type_list)
 
 
-def is_general_tensor_shape_node(node, modules):
+def is_general_tensor_shape_node(node, modules) -> bool:
     func_list = [
         torch.narrow,
         torch.transpose,
@@ -190,7 +190,7 @@ def is_general_tensor_shape_node(node, modules):
     return _is_node_in_list(node, modules, func_list, method_list, module_type_list)
 
 
-def is_other_node(node, modules):
+def is_other_node(node, modules) -> bool:
     func_list = [
         torch.cat,
     ]
@@ -199,7 +199,7 @@ def is_other_node(node, modules):
     return _is_node_in_list(node, modules, func_list, method_list, module_type_list)
 
 
-def is_special_pattern_node(node, modules):
+def is_special_pattern_node(node, modules) -> bool:
     res_function, res_method, res_module = False, False, False
     for checker in [
         is_fixed_qparams_node,
@@ -215,7 +215,7 @@ def is_special_pattern_node(node, modules):
     return res_function, res_method, res_module
 
 
-def is_dequantize_node(node):
+def is_dequantize_node(node) -> bool:
     return (
         isinstance(node, Node)
         and node.op == "call_method"
@@ -223,7 +223,7 @@ def is_dequantize_node(node):
     )
 
 
-def is_getattr_tensor_metadata_node(node):
+def is_getattr_tensor_metadata_node(node) -> bool:
     return (
         node.op == "call_function"
         and node.target == getattr
@@ -231,7 +231,7 @@ def is_getattr_tensor_metadata_node(node):
     )
 
 
-def is_get_tensor_info_node(node):
+def is_get_tensor_info_node(node) -> bool:
     return node.op == "call_method" and node.target in ["shape", "size"]
 
 

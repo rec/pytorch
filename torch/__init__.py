@@ -709,7 +709,7 @@ class SymFloat:
     def __sym_int__(self):
         raise TypeError("type stub not overridden")
 
-    def is_integer(self):
+    def is_integer(self) -> bool:
         """Return True if the float is an integer."""
         raise TypeError("type stub not overridden")
 

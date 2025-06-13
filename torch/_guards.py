@@ -183,7 +183,7 @@ class GuardSource(enum.Enum):
             GuardSource.LOCAL_UNSPECIALIZED_BUILTIN_NN_MODULE,
         )
 
-    def is_local(self):
+    def is_local(self) -> bool:
         return self in (
             GuardSource.LOCAL,
             GuardSource.LOCAL_SPECIALIZED_NN_MODULE,
@@ -362,13 +362,13 @@ class Guard:
                 log.error("Created at:\n%s", "".join(self.stack.format()[-4:]).rstrip())
             raise
 
-    def is_specialized_nn_module(self):
+    def is_specialized_nn_module(self) -> bool:
         return self.source.is_specialized_nn_module()
 
-    def is_fsdp_module(self):
+    def is_fsdp_module(self) -> bool:
         return self.source.is_fsdp_module()
 
-    def is_local(self):
+    def is_local(self) -> bool:
         return self.source.is_local()
 
     def set_export_info(self, guard_type, guarded_class, code_list, obj_weakref):
@@ -1024,10 +1024,10 @@ def tracing(context: Optional[TracingContext]):
 # TODO(voz): Consider a toplevel torch/_source.py
 @dataclasses.dataclass(frozen=True)
 class Source:
-    def is_dict_key(self):
+    def is_dict_key(self) -> bool:
         return False
 
-    def is_ephemeral(self):
+    def is_ephemeral(self) -> bool:
         return False
 
     def reconstruct(self, codegen):
@@ -1057,11 +1057,11 @@ class Source:
 class ChainedSource(Source):
     base: Source
 
-    def is_dict_key(self):
+    def is_dict_key(self) -> bool:
         # Recurse until you either hit a ConstDictKey or a Source
         return self.base.is_dict_key()
 
-    def is_ephemeral(self):
+    def is_ephemeral(self) -> bool:
         return self.base.is_ephemeral()
 
     def get_base(self) -> Source:

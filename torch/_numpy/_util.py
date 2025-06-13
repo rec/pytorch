@@ -11,7 +11,7 @@ from . import _dtypes_impl
 
 
 # https://github.com/numpy/numpy/blob/v1.23.0/numpy/distutils/misc_util.py#L497-L504
-def is_sequence(seq):
+def is_sequence(seq) -> bool:
     if isinstance(seq, str):
         return False
     try:

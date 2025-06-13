@@ -58,7 +58,7 @@ class Dim:
             )
 
     @property
-    def is_bound(self):
+    def is_bound(self) -> bool:
         return self._size is not None
 
     def __repr__(self):

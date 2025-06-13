@@ -33,13 +33,13 @@ class PandasWrapper:
         return _pandas.DataFrame(data, columns=columns)  # type: ignore[union-attr]
 
     @classmethod
-    def is_dataframe(cls, data):
+    def is_dataframe(cls, data) -> bool:
         if not _with_pandas():
             return False
         return isinstance(data, _pandas.core.frame.DataFrame)  # type: ignore[union-attr]
 
     @classmethod
-    def is_column(cls, data):
+    def is_column(cls, data) -> bool:
         if not _with_pandas():
             return False
         return isinstance(data, _pandas.core.series.Series)  # type: ignore[union-attr]
@@ -93,7 +93,7 @@ def create_dataframe(data, columns=None):
     return wrapper.create_dataframe(data, columns)
 
 
-def is_dataframe(data):
+def is_dataframe(data) -> bool:
     wrapper = get_df_wrapper()
     return wrapper.is_dataframe(data)
 
@@ -103,7 +103,7 @@ def get_columns(data):
     return wrapper.get_columns(data)
 
 
-def is_column(data):
+def is_column(data) -> bool:
     wrapper = get_df_wrapper()
     return wrapper.is_column(data)
 

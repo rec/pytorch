@@ -152,7 +152,7 @@ class _Dependent(Constraint):
         raise ValueError("Cannot determine validity of dependent constraint")
 
 
-def is_dependent(constraint):
+def is_dependent(constraint) -> bool:
     """
     Checks if ``constraint`` is a ``_Dependent`` object.
 

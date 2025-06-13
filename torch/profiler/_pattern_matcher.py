@@ -410,7 +410,7 @@ class SynchronizedDataLoaderPattern(Pattern):
         )
 
     def match(self, event: _ProfilerEvent):
-        def is_dataloader_function(name: str, function_name: str):
+        def is_dataloader_function(name: str, function_name: str) -> bool:
             return name.startswith(
                 os.path.join("torch", "utils", "data", "dataloader.py")
             ) and name.endswith(function_name)

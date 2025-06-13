@@ -733,7 +733,7 @@ class QuantizationTestCase(TestCase):
         )
 
         # check if a module is a leaf module, ignoring activation_post_process attribute
-        def is_leaf_module(module):
+        def is_leaf_module(module) -> bool:
             submodule_name_count = 0
             for name, _ in module.named_children():
                 if name != "activation_post_process":

@@ -93,7 +93,7 @@ def is_functional_schema(schema: Any) -> bool:
     - it has at least one return
     """
 
-    def is_functional(schema):
+    def is_functional(schema) -> bool:
         if schema.is_mutable:
             return False
         rets = schema.returns

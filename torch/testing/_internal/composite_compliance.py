@@ -40,7 +40,7 @@ def check_metadata_consistency(wrapper_tensor, CCT):
     for metadata_name, metadata_accessor in things_to_check.items():
         check_attr_consistency(wrapper_tensor, metadata_name, metadata_accessor)
 
-def is_view_fn(func):
+def is_view_fn(func) -> bool:
     return func.overloadpacket.__name__ in {
         'as_strided',
         'detach',
@@ -80,7 +80,7 @@ def is_view_fn(func):
 
 # manually populated from native_functions that have inplace_view: True.
 # In the future we will probably be able to grab that list directly
-def is_inplace_view_fn(func):
+def is_inplace_view_fn(func) -> bool:
     return func.overloadpacket.__name__ in {
         'as_strided_',
         'detach_',
@@ -94,7 +94,7 @@ def is_inplace_view_fn(func):
 
 
 # Introspection please save us
-def is_inplace(func):
+def is_inplace(func) -> bool:
     name = func.overloadpacket.__name__
     if re.match('__i.+__', name):
         return True
@@ -257,7 +257,7 @@ def generate_cct_and_mode(autograd_view_consistency=True):
 
     return CompositeCompliantTensor, CompositeCompliantTensorMode()
 
-def is_tensorlist(lst):
+def is_tensorlist(lst) -> bool:
     if not isinstance(lst, list) and not isinstance(lst, tuple):
         return False
     if len(lst) == 0:

@@ -53,7 +53,7 @@ def _prepare_video(V):
     if V.dtype == np.uint8:
         V = np.float32(V) / 255.0
 
-    def is_power2(num):
+    def is_power2(num) -> bool:
         return num != 0 and ((num & (num - 1)) == 0)
 
     # pad to nearest power of 2, all at once

@@ -3,7 +3,7 @@
 import torch._subclasses
 
 
-def is_builtin(op):
+def is_builtin(op) -> bool:
     return op.namespace in ('aten', 'prims', 'prim')
 
 

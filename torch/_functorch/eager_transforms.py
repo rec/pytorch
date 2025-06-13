@@ -93,7 +93,7 @@ def _undo_create_differentiable(inps, level=None):
     return tree_map(unwrap_tensors, inps)
 
 
-def _is_differentiable(maybe_tensor):
+def _is_differentiable(maybe_tensor) -> bool:
     if not isinstance(maybe_tensor, torch.Tensor):
         return False
     return maybe_tensor.requires_grad

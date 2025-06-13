@@ -91,7 +91,7 @@ class OperatorConfig(NamedTuple):
     operators: list[OperatorPatternType]
 
 
-def _is_annotated(nodes: list[Node]):
+def _is_annotated(nodes: list[Node]) -> bool:
     """
     Given a list of nodes (that represents an operator pattern),
     check if any of the node is annotated, return True if any of the node
@@ -712,7 +712,7 @@ def _annotate_adaptive_avg_pool2d(
     return annotated_partitions
 
 
-def _is_input_large_scalar(node: Node, gm: torch.fx.GraphModule):
+def _is_input_large_scalar(node: Node, gm: torch.fx.GraphModule) -> bool:
     """Check if input is a large scalar value. So that we can skip quantization for the node
     since histc op (in HistogramObserver) only works for values up to certain upper bound
     """
@@ -727,7 +727,7 @@ def _is_input_large_scalar(node: Node, gm: torch.fx.GraphModule):
     return False
 
 
-def _is_input_non_float_tensor(node: Node):
+def _is_input_non_float_tensor(node: Node) -> bool:
     """Check if the input is not a float tensor, so that we can skip quantization for the node
     since observers only works with float Tensors
     """

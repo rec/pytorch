@@ -44,7 +44,7 @@ def namer_api_name(inplace):
         return "rename"
 
 
-def is_ellipsis(item):
+def is_ellipsis(item) -> bool:
     return item == Ellipsis or item == "..."
 
 

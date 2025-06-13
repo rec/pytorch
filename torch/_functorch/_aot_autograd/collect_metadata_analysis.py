@@ -669,7 +669,7 @@ from a multi-output view call"
                     x.shape, dtype=x.dtype, device=x.device, layout=x.layout
                 )
 
-        def _is_subclass_mutated_input_tangent_always_subclass(inp):
+        def _is_subclass_mutated_input_tangent_always_subclass(inp) -> bool:
             return (
                 isinstance(inp, torch.nested._internal.nested_tensor.NestedTensor)
                 or torch._functorch.config.disable_guess_zero_tangent_for_mutated_input_subclass

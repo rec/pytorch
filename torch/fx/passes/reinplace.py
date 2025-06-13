@@ -22,7 +22,7 @@ class _ViewType(Enum):
     MultiOutputView = 2
 
 
-def _is_view_op(tgt):
+def _is_view_op(tgt) -> bool:
     if tgt is not None and isinstance(tgt, torch._ops.OpOverload):
         schema = tgt._schema
         if len(schema.arguments) > 0:

@@ -2126,5 +2126,5 @@ def _load(
     return result
 
 
-def _is_torchscript_zip(zip_file):
+def _is_torchscript_zip(zip_file) -> bool:
     return "constants.pkl" in zip_file.get_all_records()

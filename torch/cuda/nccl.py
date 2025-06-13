@@ -12,7 +12,7 @@ __all__ = ["all_reduce", "reduce", "broadcast", "all_gather", "reduce_scatter"]
 SUM = 0  # ncclRedOp_t
 
 
-def is_available(tensors):
+def is_available(tensors) -> bool:
     if not hasattr(torch._C, "_nccl_all_reduce"):
         warnings.warn("PyTorch is not compiled with NCCL support")
         return False

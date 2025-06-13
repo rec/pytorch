@@ -173,7 +173,7 @@ def _get_function_from_type(cls, name):
 
 # ScriptClasses must be new-style classes because we construct them using their
 # __new__ method.
-def _is_new_style_class(cls):
+def _is_new_style_class(cls) -> bool:
     if hasattr(cls, "__class__"):
         return "__dict__" in dir(cls) or hasattr(cls, "__slots__")
 

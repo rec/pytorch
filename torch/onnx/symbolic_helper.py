@@ -122,7 +122,7 @@ def _node_get(node: _C.Node, key: str):
     return getattr(node, sel)(key)
 
 
-def _is_onnx_constant(value: _C.Value):
+def _is_onnx_constant(value: _C.Value) -> bool:
     """Whether a Value is an ONNX constant."""
     return value.node().kind() == "onnx::Constant"
 
@@ -353,7 +353,7 @@ def quantized_args(
             )
             descriptor_args = tuple(zip(arg_q_descriptors_extended, args))
 
-            def _is_arg_quantized(descriptor, arg):
+            def _is_arg_quantized(descriptor, arg) -> bool:
                 return descriptor and _is_value(arg) and _is_tuple_construct(arg)
 
             # Run regular symbolic function if none of the argument is QTensor.
@@ -1270,7 +1270,7 @@ def _arange_cast_helper(
     _C.Value | None,
     _C.Value | None,
 ]:
-    def _is_all_integral(scalars):
+    def _is_all_integral(scalars) -> bool:
         for scalar in scalars:
             scalar_type = _type_utils.JitScalarType.from_value(
                 scalar, _type_utils.JitScalarType.UNDEFINED
@@ -1483,7 +1483,7 @@ def _flatten_helper(g: jit_utils.GraphContext, input, start_dim, end_dim, dim):
     return _reshape_from_tensor(g, input, final_shape)
 
 
-def _is_split_static(split_size_or_sizes, _outputs):
+def _is_split_static(split_size_or_sizes, _outputs) -> bool:
     if _outputs is None:
         return False
     if (

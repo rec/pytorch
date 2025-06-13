@@ -818,7 +818,7 @@ class Tensor(torch._C.TensorBase):
     """,
     )
 
-    def is_shared(self):
+    def is_shared(self) -> bool:
         r"""Checks if tensor is in shared memory.
 
         This is always ``True`` for CUDA tensors.

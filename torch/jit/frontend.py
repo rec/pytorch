@@ -89,7 +89,7 @@ _reserved_names = {"print"}
 _identifier_chars = set(string.ascii_lowercase + string.ascii_uppercase + string.digits)
 
 
-def is_reserved_name(name):
+def is_reserved_name(name) -> bool:
     return name.startswith(_reserved_prefix) or name in _reserved_names
 
 
@@ -269,7 +269,7 @@ def get_jit_class_def(cls, self_name):
         and not _is_drop_fn(m),
     )
 
-    def is_classmethod(fn):
+    def is_classmethod(fn) -> bool:
         return inspect.ismethod(fn) and getattr(fn, "__self__", None) == cls
 
     # Get and parse the source code for this class
@@ -390,7 +390,7 @@ def get_jit_def(fn, def_name, self_name=None, is_classmethod=False):
 
 
 # TODO: more robust handling of recognizing ignore context manager
-def is_torch_jit_ignore_context_manager(stmt):
+def is_torch_jit_ignore_context_manager(stmt) -> bool:
     # checks if the statement is torch.jit.ignore context manager
     if isinstance(stmt.items[0].context_expr, ast.Call):
         # extract torch part

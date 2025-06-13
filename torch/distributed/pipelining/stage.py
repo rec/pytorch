@@ -213,14 +213,14 @@ class _PipelineStageBase(ABC):
         self._has_backward = has_backward
 
     @property
-    def is_first(self):
+    def is_first(self) -> bool:
         """
         Returns true if this stage is the first stage in the pipeline.
         """
         return self.stage_index == 0
 
     @property
-    def is_last(self):
+    def is_last(self) -> bool:
         """
         Returns true if this stage is the last stage in the pipeline.
         """

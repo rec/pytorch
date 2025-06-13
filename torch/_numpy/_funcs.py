@@ -19,7 +19,7 @@ from ._normalizations import normalizer
 
 
 def _public_functions(mod):
-    def is_public_function(f):
+    def is_public_function(f) -> bool:
         return inspect.isfunction(f) and not f.__name__.startswith("_")
 
     return inspect.getmembers(mod, is_public_function)

@@ -363,7 +363,7 @@ aten = torch._ops.ops.aten
 # torch/_torch_docs.py
 
 
-def is_noncontiguous_supported(device):
+def is_noncontiguous_supported(device) -> bool:
     return device is None or device.type != "hpu"
 
 
@@ -588,7 +588,7 @@ def ceil(a):
 
 
 @register_decomposition(aten.is_complex)
-def is_complex(input: TensorLikeType):
+def is_complex(input: TensorLikeType) -> bool:
     return utils.is_complex_dtype(input.dtype)
 
 
@@ -5235,7 +5235,7 @@ def arange(
             lambda: "upper bound and lower bound inconsistent with step sign",
         )
 
-    def is_finite(x):
+    def is_finite(x) -> bool:
         return not isinstance(x, FloatWithoutSymFloat) or math.isfinite(x)
 
     torch._check(

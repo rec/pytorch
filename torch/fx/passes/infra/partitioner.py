@@ -297,7 +297,7 @@ class CapabilityBasedPartitioner:
     def remove_bookend_non_compute_ops(self, partitions: list[Partition]):
         non_compute_ops = set(self.non_compute_ops)
 
-        def is_non_compute_node(node: Node):
+        def is_non_compute_node(node: Node) -> bool:
             return (
                 node.op == "call_function"
                 and _get_qualified_name(node.target) in non_compute_ops  # type: ignore[arg-type]

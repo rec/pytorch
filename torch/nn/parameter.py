@@ -174,7 +174,7 @@ class UninitializedTensorMixin:
         )
 
 
-def is_lazy(param):
+def is_lazy(param) -> bool:
     return isinstance(param, UninitializedTensorMixin)
 
 

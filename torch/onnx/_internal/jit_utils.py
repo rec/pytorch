@@ -310,7 +310,7 @@ def _create_node(
     return node
 
 
-def _is_onnx_list(value):
+def _is_onnx_list(value) -> bool:
     return isinstance(value, Iterable) and not isinstance(
         value, (str, bytes, torch.Tensor)
     )

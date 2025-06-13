@@ -62,7 +62,7 @@ class InstanceNormBench(NormalizationBench):
     def module():
         return "instance_norm"
 
-    def is_supported(self):
+    def is_supported(self) -> bool:
         return tensor_engine.is_supported(self.instance_norm)
 
 

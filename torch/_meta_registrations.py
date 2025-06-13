@@ -2386,7 +2386,7 @@ def calc_conv_nd_return_shape(
     return ret_shape
 
 
-def is_channels_last(ten):
+def is_channels_last(ten) -> bool:
     return torch._prims_common.suggest_memory_format(ten) == torch.channels_last
 
 
@@ -3950,12 +3950,12 @@ def meta_embedding_bag(
             ),
         )
 
-    def is_fast_path_index_select_scale(src, scale, output, padding_idx):
+    def is_fast_path_index_select_scale(src, scale, output, padding_idx) -> bool:
         return (
             is_fast_path_index_select(src, output, padding_idx) and scale.stride(0) == 1
         )
 
-    def is_fast_path_index_select(src, output, padding_idx):
+    def is_fast_path_index_select(src, output, padding_idx) -> bool:
         return (
             (src.dtype == torch.float or src.dtype == torch.half)
             and src.stride(1) == 1
@@ -3963,7 +3963,7 @@ def meta_embedding_bag(
             and padding_idx < 0
         )
 
-    def is_fast_path(src, scale, output, padding_idx):
+    def is_fast_path(src, scale, output, padding_idx) -> bool:
         if scale is not None:
             return is_fast_path_index_select_scale(src, scale, output, padding_idx)
         else:
@@ -4120,19 +4120,19 @@ def meta_binop_inplace_alpha(self, other, alpha=1):
     Checks for alpha param.
     """
 
-    def is_integeric(arg):
+    def is_integeric(arg) -> bool:
         if isinstance(arg, TensorLike):
             return utils.is_integer_dtype(arg.dtype)
         else:
             return isinstance(arg, IntLike)
 
-    def is_floatic(arg):
+    def is_floatic(arg) -> bool:
         if isinstance(arg, TensorLike):
             return utils.is_float_dtype(arg.dtype)
         else:
             return isinstance(arg, FloatLike)
 
-    def is_booleanic(arg):
+    def is_booleanic(arg) -> bool:
         if isinstance(arg, TensorLike):
             return utils.is_boolean_dtype(arg.dtype)
         else:
@@ -6228,7 +6228,7 @@ def meta_scaled_mm(
     out_dtype: Optional[torch.dtype] = None,
     use_fast_accum: bool = False,
 ):
-    def is_fp8_or_fp4_type(dtype):
+    def is_fp8_or_fp4_type(dtype) -> bool:
         return dtype in (
             torch.float8_e4m3fn,
             torch.float8_e5m2,
@@ -6248,10 +6248,10 @@ def meta_scaled_mm(
 
     if device_hint(self) == "cuda":
 
-        def is_row_major(stride):
+        def is_row_major(stride) -> bool:
             return stride[0] > stride[1] and stride[1] == 1
 
-        def is_col_major(stride):
+        def is_col_major(stride) -> bool:
             return stride[0] == 1 and stride[1] > 1
 
         def has_zero_dim(tensor_2d):
@@ -6854,7 +6854,7 @@ def meta_pixel_shuffle(self, upscale_factor):
         f"Invalid input shape for pixel_shuffle: {self.shape} with upscale_factor = {upscale_factor}"
     )
 
-    def is_channels_last(ten):
+    def is_channels_last(ten) -> bool:
         return torch._prims_common.suggest_memory_format(ten) == torch.channels_last
 
     def pick_memory_format():

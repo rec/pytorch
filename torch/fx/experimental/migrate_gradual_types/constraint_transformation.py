@@ -888,7 +888,7 @@ def generate_all_int_dyn_dim_possibilities(my_list: list[DVar]):
     return all_possibilities
 
 
-def is_target_div_by_dim(target: list[int], dim: list[DVar]):
+def is_target_div_by_dim(target: list[int], dim: list[DVar]) -> bool:
     """
     Generate constraints to check if the target dimensions are divisible by the input dimensions
     Args:
@@ -901,7 +901,7 @@ def is_target_div_by_dim(target: list[int], dim: list[DVar]):
     return BinConstraintD(BinConstraintD(Prod(target), dim, op_mod), 0, op_eq)
 
 
-def is_dim_div_by_target(target: list[int], dim: list[DVar]):
+def is_dim_div_by_target(target: list[int], dim: list[DVar]) -> bool:
     """
     Generate constraints to check if the input dimensions is divisible by the target dimensions
     Args:

@@ -94,12 +94,12 @@ CUDNN_TENSOR_DTYPES = {
 }
 
 
-def is_available():
+def is_available() -> bool:
     r"""Return a bool indicating if CUDNN is currently available."""
     return torch._C._has_cudnn
 
 
-def is_acceptable(tensor):
+def is_acceptable(tensor) -> bool:
     if not torch._C._get_cudnn_enabled():
         return False
     if tensor.device.type != "cuda" or tensor.dtype not in CUDNN_TENSOR_DTYPES:

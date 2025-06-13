@@ -415,7 +415,7 @@ class SplitInputs:
     kwarg_types: dict[str, Any]
 
     @staticmethod
-    def _is_tensor_input(arg):
+    def _is_tensor_input(arg) -> bool:
         return isinstance(arg, torch.Tensor) or is_iterable_of_tensors(arg)
 
     def __init__(self, args, kwargs):

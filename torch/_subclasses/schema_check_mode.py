@@ -30,7 +30,7 @@ SchemaInfo = torch._C._SchemaInfo
 # move these 2 functions here to avoid numpy dependency in testing/_internal/common_utils.py
 
 
-def is_iterable_of_tensors(iterable):
+def is_iterable_of_tensors(iterable) -> bool:
     # Tensor itself is iterable so we check this first
     if isinstance(iterable, torch.Tensor):
         return False

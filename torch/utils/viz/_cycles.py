@@ -310,7 +310,7 @@ def escape(n):
     return json.dumps(n)
 
 
-def is_cuda_tensor(obj):
+def is_cuda_tensor(obj) -> bool:
     return isinstance(obj, torch.Tensor) and obj.is_cuda and not isinstance(obj, torch._subclasses.FakeTensor)
 
 def cuda_allocation_context():

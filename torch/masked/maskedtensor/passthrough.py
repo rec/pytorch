@@ -38,7 +38,7 @@ PASSTHROUGH_FNS = [
 ]
 
 
-def _is_pass_through_fn(fn):
+def _is_pass_through_fn(fn) -> bool:
     return fn in PASSTHROUGH_FNS
 
 

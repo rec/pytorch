@@ -68,10 +68,10 @@ def check_dtype(f_name, t, dtype, *additional_dtypes):
 def check_blocksize(f_name, blocksize):
     assert len(blocksize) == 2
 
-    def is_power_of_two(v):
+    def is_power_of_two(v) -> bool:
         return not (v & (v - 1))
 
-    def is_compatible_blocksize(b):
+    def is_compatible_blocksize(b) -> bool:
         res = True
         for blocksize in b:
             # Triton loads only blocks which are at least 16 and powers of 2.

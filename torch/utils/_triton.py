@@ -85,7 +85,7 @@ def has_triton() -> bool:
         "cpu": cpu_extra_check,
     }
 
-    def is_device_compatible_with_triton():
+    def is_device_compatible_with_triton() -> bool:
         for device, extra_check in triton_supported_devices.items():
             device_interface = get_interface_for_device(device)
             if device_interface.is_available() and extra_check(device_interface):

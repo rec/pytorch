@@ -353,7 +353,7 @@ def _get_custom_mod_func(func_name: str):
     Example::
         class DummyfooModule:
             @staticmethod
-            def is_available():
+            def is_available() -> bool:
                 return True
             @staticmethod
             def func_name(*args, **kwargs):

@@ -104,7 +104,7 @@ def out_dtype_dense(op: torch._ops.OpOverload, output_dtype: torch.dtype, *args)
     return out_dtype_fallback(op, output_dtype, *args)
 
 
-def is_int_mm(op, output_dtype, args):
+def is_int_mm(op, output_dtype, args) -> bool:
     return (
         op == torch.ops.aten.mm.default
         and output_dtype == torch.int32

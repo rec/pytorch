@@ -479,7 +479,7 @@ class check_sparse_tensor_invariants:
     """
 
     @staticmethod
-    def is_enabled():
+    def is_enabled() -> bool:
         r"""Return True if the sparse tensor invariants checking is enabled.
 
         .. note::

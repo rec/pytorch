@@ -79,7 +79,7 @@ def get_chrome_trace_events(filename):
     return events
 
 
-def is_gpu_compute_event(event):
+def is_gpu_compute_event(event) -> bool:
     global gpu_pids
     return (
         "pid" in event
@@ -113,7 +113,7 @@ def get_duration(sorted_gpu_events):
 
 
 def get_sorted_gpu_mm_conv_events(events):
-    def is_mm_conv_event(event):
+    def is_mm_conv_event(event) -> bool:
         return "name" in event and (
             "gemm" in event["name"]
             or "conv" in event["name"]

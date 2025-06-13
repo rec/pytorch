@@ -344,7 +344,7 @@ def _decompose_and_get_gm_with_new_signature_constants(
     )
     from torch.fx.experimental.symbolic_shapes import ShapeEnv
 
-    def _is_joint_ir_decomp(ep, joint_loss_index):
+    def _is_joint_ir_decomp(ep, joint_loss_index) -> bool:
         return (
             joint_loss_index is not None
             or ep.graph_signature.backward_signature is not None

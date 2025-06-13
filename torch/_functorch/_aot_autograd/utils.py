@@ -238,14 +238,14 @@ def maybe_to_fresh_input(idx, t, meta):
     return t
 
 
-def is_with_effects(node):
+def is_with_effects(node) -> bool:
     return (
         node.op == "call_function"
         and node.target == torch.ops.higher_order.with_effects
     )
 
 
-def is_with_effects_op(node, op):
+def is_with_effects_op(node, op) -> bool:
     return is_with_effects(node) and node.args[1] == op
 
 
@@ -409,7 +409,7 @@ def copy_fwd_metadata_to_bw_nodes(fx_g):
     profiling and debugging.
     """
 
-    def _is_forward_node_with_seq_nr(node):
+    def _is_forward_node_with_seq_nr(node) -> bool:
         # For now, assume that if nn_module_stack_metadata is populated, this
         # node is from the forward. Ignore nodes without `seq_nr`.
         # TODO(future): there is likely a less brittle way to do this by walking
@@ -418,7 +418,7 @@ def copy_fwd_metadata_to_bw_nodes(fx_g):
         # fwd vs bwd without relying on string names.
         return "nn_module_stack" in node.meta and "seq_nr" in node.meta
 
-    def _is_backward_node_with_seq_nr(node):
+    def _is_backward_node_with_seq_nr(node) -> bool:
         # For now, assume that if nn_module_stack_metadata is not populated,
         # this node is from the backward. Ignore nodes without `seq_nr`.
         # TODO(future): there is likely a less brittle way to do this, same

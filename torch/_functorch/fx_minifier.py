@@ -75,7 +75,7 @@ class ConcreteProp(torch.fx.Interpreter):
             return r
 
 
-def is_load_tensor_node(node):
+def is_load_tensor_node(node) -> bool:
     return (
         node.op == "call_function"
         and node.target is torch.ops.debugprims.load_tensor.default
@@ -155,7 +155,7 @@ inps = [torch.zeros(())] + [torch.ones(shape, dtype=dtype, device=device) for (s
     )
 
 
-def is_power_of_two(n):
+def is_power_of_two(n) -> bool:
     if n == 0:
         return False
     return (n & (n - 1)) == 0

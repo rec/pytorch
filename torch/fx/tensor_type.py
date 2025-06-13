@@ -56,7 +56,7 @@ Dyn = _DynType()
 
 
 @compatibility(is_backward_compatible=False)
-def is_consistent(t1, t2):
+def is_consistent(t1, t2) -> bool:
     """
     A binary relation denoted by ~ that determines if t1 is consistent with t2.
     The relation is reflexive, symmetric but not transitive.
@@ -84,7 +84,7 @@ def is_consistent(t1, t2):
 
 
 @compatibility(is_backward_compatible=False)
-def is_more_precise(t1, t2):
+def is_more_precise(t1, t2) -> bool:
     """
     A binary relation denoted by <= that determines if t1 is more precise than t2.
     The relation is reflexive and transitive.

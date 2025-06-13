@@ -86,7 +86,7 @@ def key_path_to_source(kp: KeyPath) -> Source:
     return source
 
 
-def _is_constant_argument(t):
+def _is_constant_argument(t) -> bool:
     return t is None or isinstance(t, (float, bool, str))
 
 
@@ -162,7 +162,7 @@ def fakify(
     return fake
 
 
-def _is_unbacked_symint(symbol):
+def _is_unbacked_symint(symbol) -> bool:
     if not isinstance(symbol, torch.SymInt):
         return False
 

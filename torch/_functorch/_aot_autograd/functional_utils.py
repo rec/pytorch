@@ -74,7 +74,7 @@ def from_fun(t):
     return torch._from_functional_tensor(t.elem)
 
 
-def is_fun(t):
+def is_fun(t) -> bool:
     if isinstance(t, Tensor) and is_traceable_wrapper_subclass(t):
         # See Note [Functionalization always runs last]
         # This means that if we want to "functionalize" a subclass, we need to ensure that the functional wrapper

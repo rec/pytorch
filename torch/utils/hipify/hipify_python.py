@@ -614,7 +614,7 @@ def get_hip_file_path(rel_filepath, is_pytorch_extension=False):
     return os.path.join(dirpath, root + ext)
 
 
-def is_out_of_place(rel_filepath):
+def is_out_of_place(rel_filepath) -> bool:
     assert not os.path.isabs(rel_filepath)
     if rel_filepath.startswith("torch/"):
         return False
@@ -626,7 +626,7 @@ def is_out_of_place(rel_filepath):
 
 
 # Keep this synchronized with includes/ignores in build_amd.py
-def is_pytorch_file(rel_filepath):
+def is_pytorch_file(rel_filepath) -> bool:
     assert not os.path.isabs(rel_filepath)
     if rel_filepath.startswith("aten/"):
         if rel_filepath.startswith("aten/src/ATen/core/"):
@@ -641,13 +641,13 @@ def is_pytorch_file(rel_filepath):
     return False
 
 
-def is_cusparse_file(rel_filepath):
+def is_cusparse_file(rel_filepath) -> bool:
     if is_pytorch_file(rel_filepath):
         return "sparse" in rel_filepath.lower()
     return False
 
 
-def is_special_file(rel_filepath):
+def is_special_file(rel_filepath) -> bool:
     if is_pytorch_file(rel_filepath):
         if "sparse" in rel_filepath.lower():
             return True
@@ -657,7 +657,7 @@ def is_special_file(rel_filepath):
             return True
     return False
 
-def is_caffe2_gpu_file(rel_filepath):
+def is_caffe2_gpu_file(rel_filepath) -> bool:
     assert not os.path.isabs(rel_filepath)
     if rel_filepath.startswith("c10/cuda"):
         return True

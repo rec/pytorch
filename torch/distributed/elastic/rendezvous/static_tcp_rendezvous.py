@@ -82,7 +82,7 @@ class StaticTCPRendezvous(RendezvousHandler):
             bootstrap_store_info,
         )
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
         return False
 
     def set_closed(self):

@@ -83,7 +83,7 @@ class ModTracker:
         self._has_callback = True
 
     @property
-    def is_bw(self):
+    def is_bw(self) -> bool:
         """
         A boolean marking if this is currently running during the backward pass or not
         """

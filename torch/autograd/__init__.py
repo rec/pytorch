@@ -539,7 +539,7 @@ def grad(
 # in the stack and before a NodeTask is executed in evaluate_function, it
 # checks for whether reentrant backwards is imperative or not.
 # See https://github.com/pytorch/pytorch/pull/4594 for more discussion/context
-def _is_checkpoint_valid():
+def _is_checkpoint_valid() -> bool:
     return Variable._execution_engine.is_checkpoint_valid()
 
 

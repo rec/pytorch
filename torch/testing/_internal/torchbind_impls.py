@@ -129,7 +129,7 @@ def register_fake_classes():
         def size(self):
             return len(self.queue)
 
-        def is_empty(self):
+        def is_empty(self) -> bool:
             return len(self.queue) == 0
 
         def float_size(self):

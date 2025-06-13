@@ -28,7 +28,7 @@ _MatchResultWithQConfig = tuple[
 # need to put the fusion patterns before single patterns. For example, add_relu should be registered come before relu.
 # decorators are applied in the reverse order we see. Also when we match the nodes in the graph with these patterns,
 # we'll start from the last node of the graph and traverse back.
-def _is_match(modules, node, pattern, max_uses=sys.maxsize):
+def _is_match(modules, node, pattern, max_uses=sys.maxsize) -> bool:
     """Matches a node in fx against a pattern"""
     if isinstance(pattern, tuple):
         self_match, *arg_matches = pattern
@@ -203,7 +203,7 @@ def _find_matches(
                 QuantizeHandler(node, modules, is_custom_module=True),
             )
 
-    def is_standalone_module(node_target: str, modules: dict[str, torch.nn.Module]):
+    def is_standalone_module(node_target: str, modules: dict[str, torch.nn.Module]) -> bool:
         assert modules is not None
         return (
             node_target in standalone_module_names

@@ -71,19 +71,19 @@ class OpTypes:
     view_ops: OrderedSet[Callable]
     recomputable_ops: OrderedSet[Callable]
 
-    def is_fusible(self, node: fx.Node):
+    def is_fusible(self, node: fx.Node) -> bool:
         return get_aten_target(node) in self.fusible_ops
 
-    def is_compute_intensive(self, node: fx.Node):
+    def is_compute_intensive(self, node: fx.Node) -> bool:
         return get_aten_target(node) in self.compute_intensive_ops
 
-    def is_random(self, node: fx.Node):
+    def is_random(self, node: fx.Node) -> bool:
         return get_aten_target(node) in self.random_ops
 
-    def is_view(self, node: fx.Node):
+    def is_view(self, node: fx.Node) -> bool:
         return get_aten_target(node) in self.view_ops
 
-    def is_recomputable(self, node: fx.Node):
+    def is_recomputable(self, node: fx.Node) -> bool:
         return get_aten_target(node) in self.recomputable_ops
 
 
@@ -1531,7 +1531,7 @@ def solve_min_cut(
                 return True
         return False
 
-    def is_fusible(a, b):
+    def is_fusible(a, b) -> bool:
         # We can perform "memory fusion" into a cat, but cat cannot be a
         # producer to a fusion
         if get_aten_target(b) == aten.cat:
@@ -1557,7 +1557,7 @@ def solve_min_cut(
             "Need networkx installed to perform smart recomputation heuristics"
         ) from e
 
-    def is_materialized_backwards(node):
+    def is_materialized_backwards(node) -> bool:
         if op_types.is_view(node):
             return False
         cur_nodes = OrderedSet([node])
@@ -1621,7 +1621,7 @@ def solve_min_cut(
             return output_size * 4 < input_tensors_size
         return False
 
-    def is_materialized(node):
+    def is_materialized(node) -> bool:
         if node.op == "placeholder":
             return True
 

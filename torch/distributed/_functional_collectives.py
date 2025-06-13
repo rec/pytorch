@@ -21,7 +21,7 @@ except ImportError:
 
 if torch._running_with_deploy():
 
-    def is_torchdynamo_compiling():
+    def is_torchdynamo_compiling() -> bool:
         """Can't import torchdynamo in torchdeploy builds currently."""
         return False
 
@@ -33,7 +33,7 @@ else:
             "Unable to import torchdynamo util `is_torchdynamo_compiling`, so won't support torchdynamo correctly"
         )
 
-        def is_torchdynamo_compiling():
+        def is_torchdynamo_compiling() -> bool:
             return False
 
 
@@ -433,7 +433,7 @@ def reduce_scatter_tensor_coalesced(
 
 # This is a bit unsafe: it checks if the first argument in the schema reports as a non-mutable alias.
 # Today, this maps 1:1 with "aten ops that are views".
-def _is_view_op(tgt):
+def _is_view_op(tgt) -> bool:
     assert isinstance(tgt, torch._ops.OpOverload)
     # Don't apply the view optimization to any `CompositeImplicitAutograd` ops.
     # See issue: https://github.com/pytorch/pytorch/issues/133421

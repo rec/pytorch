@@ -166,7 +166,7 @@ def inplace_optimize_sym_size_div(gm: torch.fx.GraphModule):
     subgraph_rewriter.replace_pattern(gm, pattern, replacement)
 
 
-def is_valid_for_codegen(name):
+def is_valid_for_codegen(name) -> bool:
     if len(name) == 0:
         raise RuntimeError("Empty argument name for codegen")
     if name[0].isdigit():
@@ -460,7 +460,7 @@ class TS2FXGraphConverter:
         # needs to be updated.
         self.name_update_from_subblock_to_parent: set[str] = set()
 
-    def _is_get_attr_node(self, fqn):
+    def _is_get_attr_node(self, fqn) -> bool:
         return (
             fqn in self.name_to_buffer
             or fqn in self.name_to_param
@@ -521,7 +521,7 @@ class TS2FXGraphConverter:
                 )
         return arguments
 
-    def is_top_level_graph(self):
+    def is_top_level_graph(self) -> bool:
         return isinstance(self.ts_graph, torch._C.Graph)
 
     def add_subgraph(self, subgraph) -> str:

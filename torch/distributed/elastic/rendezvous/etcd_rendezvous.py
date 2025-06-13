@@ -181,7 +181,7 @@ class EtcdRendezvousHandler(RendezvousHandler):
         )
         return RendezvousInfo(store, rank, world_size, bootstrap_store_info)
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
         try:
             _, state = self._rdzv_impl.get_rdzv_state()
             return state["status"] == "closed"

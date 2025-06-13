@@ -89,10 +89,10 @@ class LogRegistry:
     # logging format string for artifacts
     artifact_log_formatters: dict[str, logging.Formatter] = field(default_factory=dict)
 
-    def is_artifact(self, name):
+    def is_artifact(self, name) -> bool:
         return name in self.artifact_names
 
-    def is_log(self, alias):
+    def is_log(self, alias) -> bool:
         return alias in self.log_alias_to_log_qnames
 
     # register a log with an alias
@@ -137,7 +137,7 @@ class LogRegistry:
     def get_child_log_qnames(self):
         return set(self.child_log_qnames)
 
-    def is_off_by_default(self, artifact_qname):
+    def is_off_by_default(self, artifact_qname) -> bool:
         return artifact_qname in self.off_by_default_artifact_names
 
 
@@ -152,7 +152,7 @@ class LogState:
     def enable_artifact(self, artifact_name):
         self.artifact_names.add(artifact_name)
 
-    def is_artifact_enabled(self, name):
+    def is_artifact_enabled(self, name) -> bool:
         return name in self.artifact_names
 
     def enable_log(self, log_qnames, log_level):
@@ -768,7 +768,7 @@ def _parse_log_settings(settings):
     return log_state
 
 
-def _is_valid_module(qname):
+def _is_valid_module(qname) -> bool:
     spec = importlib.util.find_spec(qname)
     return spec is not None
 
@@ -939,7 +939,7 @@ def _track_handler(handler):
     return handler
 
 
-def _is_torch_handler(handler):
+def _is_torch_handler(handler) -> bool:
     return handler in handlers
 
 

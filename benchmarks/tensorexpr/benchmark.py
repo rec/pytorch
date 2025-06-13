@@ -92,7 +92,7 @@ class Benchmark:
         """return a list of defualt configs for this benchmark"""
         raise ValueError("this method should be reimplemented by subclass")
 
-    def is_supported(self):
+    def is_supported(self) -> bool:
         return True
 
     def rand(self, shape, device=None, dtype=None, requires_grad=False):

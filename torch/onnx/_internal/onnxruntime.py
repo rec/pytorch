@@ -620,7 +620,7 @@ class OrtExecutionInfoPerSession:
             example_outputs
         )
 
-    def is_supported(self, *args):
+    def is_supported(self, *args) -> bool:
         # TODO(justinchuby): Simplify
         import onnx
 

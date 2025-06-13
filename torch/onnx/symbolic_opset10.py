@@ -499,7 +499,7 @@ def _slice(
     ends: list | torch.Tensor | torch._C.Value,
     steps: list | torch.Tensor | torch._C.Value | None = None,
 ):
-    def is_none_value(value):
+    def is_none_value(value) -> bool:
         if value is None:
             return True
         return (

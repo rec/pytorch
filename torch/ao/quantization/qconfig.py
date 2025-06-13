@@ -680,7 +680,7 @@ def _activation_is_memoryless(qconfig: QConfig):
     This means a MovingAverage observer with averaging constant equal to 1.
     """
 
-    def _is_memoryless(observer):
+    def _is_memoryless(observer) -> bool:
         return (
             hasattr(observer, "averaging_constant") and observer.averaging_constant == 1
         )
@@ -692,7 +692,7 @@ def _activation_is_memoryless(qconfig: QConfig):
         return _is_memoryless(act)
 
 
-def _is_reuse_input_qconfig(qconfig: Optional[QConfig]):
+def _is_reuse_input_qconfig(qconfig: Optional[QConfig]) -> bool:
     return (
         qconfig is not None
         and isinstance(qconfig.activation(), ReuseInputObserver)

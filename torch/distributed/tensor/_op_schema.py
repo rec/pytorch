@@ -44,14 +44,14 @@ def _rebuild_tensor_from_dtensor_meta(arg) -> object:
     )
 
 
-def _is_inplace_op(op: OpOverload):
+def _is_inplace_op(op: OpOverload) -> bool:
     # simple analysis of function schema to determine
     # if this is an inplace variant, it might not
     # be entirely correct, but it's good enough for now.
     return op._schema.name[-1] == "_"
 
 
-def _is_out_variant_op(op: OpOverload):
+def _is_out_variant_op(op: OpOverload) -> bool:
     # simple analysis of function schema to determine
     # if this is an out variant, it might not
     # be entirely correct, but it's good enough for now.

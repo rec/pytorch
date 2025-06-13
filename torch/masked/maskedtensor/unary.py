@@ -182,7 +182,7 @@ NATIVE_UNARY_FNS = list(NATIVE_UNARY_MAP.keys())
 NATIVE_INPLACE_UNARY_FNS = list(NATIVE_INPLACE_UNARY_MAP.keys())
 
 
-def _is_native_unary(fn):
+def _is_native_unary(fn) -> bool:
     return fn in NATIVE_UNARY_FNS or fn in NATIVE_INPLACE_UNARY_FNS
 
 

@@ -1201,7 +1201,7 @@ def remove(module, name):
     )
 
 
-def is_pruned(module):
+def is_pruned(module) -> bool:
     r"""Check if a module is pruned by looking for pruning pre-hooks.
 
     Check whether ``module`` is pruned by looking for

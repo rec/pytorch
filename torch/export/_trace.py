@@ -1704,7 +1704,7 @@ def _export_to_aten_ir_make_fx(
 
                 hook.remove()  # type: ignore[possibly-undefined]
 
-            def _is_impure(node):
+            def _is_impure(node) -> bool:
                 if node.op == "call_function" and node.target in (
                     # In export, we ignore any op that is related to
                     # eager mode profiling call. The expectation is

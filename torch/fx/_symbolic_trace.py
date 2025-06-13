@@ -43,7 +43,7 @@ _ConstantAttributeType: TypeAlias = Union[
 _constant_attribute_types = get_args(_ConstantAttributeType)
 
 
-def is_fx_tracing():
+def is_fx_tracing() -> bool:
     return _is_fx_tracing_flag
 
 

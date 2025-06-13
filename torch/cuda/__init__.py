@@ -181,7 +181,7 @@ def is_available() -> bool:
         return torch._C._cuda_getDeviceCount() > 0
 
 
-def is_bf16_supported(including_emulation: bool = True):
+def is_bf16_supported(including_emulation: bool = True) -> bool:
     r"""Return a bool indicating if the current CUDA/ROCm device supports dtype bfloat16."""
     # Check for ROCm, if true return true, no ROCM_VERSION check required,
     # since it is supported on AMD GPU archs.
@@ -301,7 +301,7 @@ If you want to use the {} GPU with PyTorch, please check the instructions at htt
             )
 
 
-def is_initialized():
+def is_initialized() -> bool:
     r"""Return whether PyTorch's CUDA state has been initialized."""
     return _initialized and not _is_in_bad_fork()
 

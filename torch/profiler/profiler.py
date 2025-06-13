@@ -1073,13 +1073,13 @@ class ExecutionTraceObserver(_ITraceObserver):
             self._registered = False
 
     @property
-    def is_registered(self):
+    def is_registered(self) -> bool:
         """
         Returns True if the execution trace observer is registered, otherwise False.
         """
         return self._registered
 
-    def is_running(self):
+    def is_running(self) -> bool:
         """
         Returns True if the observer is running, otherwise False.
         """

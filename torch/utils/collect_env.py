@@ -473,7 +473,7 @@ def get_cuda_module_loading_config():
         return "N/A"
 
 
-def is_xnnpack_available():
+def is_xnnpack_available() -> bool:
     if TORCH_AVAILABLE:
         import torch.backends.xnnpack
         return str(torch.backends.xnnpack.enabled)  # type: ignore[attr-defined]

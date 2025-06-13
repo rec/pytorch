@@ -73,7 +73,7 @@ def _check_alias_info(context, real_out, real_in, fake_out, fake_in):
         )
 
 
-def is_sdpa_error(func, idx, e):
+def is_sdpa_error(func, idx, e) -> bool:
     if (
         (
             func is aten._scaled_dot_product_flash_attention.default

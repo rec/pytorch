@@ -540,7 +540,7 @@ def _tree_map_with_path(
         output pytree mapping func to each (int, float, str, bool, None, torch.Tensor)
     """
 
-    def is_leaf(t):
+    def is_leaf(t) -> bool:
         # BUILTIN_TYPES is a subset of SUPPORTED_NODES, the latter being all types
         # registered with pytree. Types *not* in BUILTIN_TYPES include primitive types
         # (int, float, str, bool, None, torch.Tensor), which are not in SUPPORTED_NODES,

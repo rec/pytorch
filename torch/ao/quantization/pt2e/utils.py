@@ -92,7 +92,7 @@ def _find_q_dq_node_for_user(
     return (q_node, dq_node)
 
 
-def _is_sym_size_node(node: Node):
+def _is_sym_size_node(node: Node) -> bool:
     return (
         node.op == "call_function"
         and node.target == torch.ops.aten.sym_size.default
@@ -144,7 +144,7 @@ def _get_all_arguments(orig_args, orig_kwargs, args_schema):
     return all_args
 
 
-def _is_supported_batch_norm_for_training(node: Node):
+def _is_supported_batch_norm_for_training(node: Node) -> bool:
     """
     Return True if the given node refers to an aten batch norm op QAT supports.
     """
@@ -161,7 +161,7 @@ def _is_supported_batch_norm_for_training(node: Node):
 
 
 # TODO: move this to torch/ao/quantization/utils.py
-def _is_conv_node(n: Node):
+def _is_conv_node(n: Node) -> bool:
     """
     Return whether the node refers to an aten conv op.
     """
@@ -175,7 +175,7 @@ def _is_conv_node(n: Node):
     ]
 
 
-def _is_conv_transpose_node(n: Node):
+def _is_conv_transpose_node(n: Node) -> bool:
     """
     Return whether the node refers to an aten conv_transpose op.
     """
@@ -187,18 +187,18 @@ def _is_conv_transpose_node(n: Node):
     ]
 
 
-def _is_conv_or_conv_transpose_node(n: Node):
+def _is_conv_or_conv_transpose_node(n: Node) -> bool:
     """
     Return whether the node refers to an aten conv or conv transpose op.
     """
     return _is_conv_node(n) or _is_conv_transpose_node(n)
 
 
-def _is_conv_transpose_fn(conv_fn: Callable):
+def _is_conv_transpose_fn(conv_fn: Callable) -> bool:
     return conv_fn in [F.conv_transpose1d, F.conv_transpose2d]
 
 
-def _is_bn_node(n: Node):
+def _is_bn_node(n: Node) -> bool:
     return (
         _is_supported_batch_norm_for_training(n)
         or n.target == torch.ops.aten._native_batch_norm_legit_no_training.default
@@ -403,7 +403,7 @@ def remove_tensor_overload_for_qdq_ops(match_pattern: GraphModule) -> None:
             n.target = _MAP[n.target]
 
 
-def _is_literal(arg):
+def _is_literal(arg) -> bool:
     if isinstance(arg, (int, float)):
         return True
     if isinstance(arg, (tuple, list)):

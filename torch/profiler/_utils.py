@@ -141,11 +141,11 @@ class BasicEvaluation:
         assert self.profile.kineto_results is not None
         cuda_event_list = self.profile.kineto_results.events()
 
-        def is_cuda_launch_kernel(e):
+        def is_cuda_launch_kernel(e) -> bool:
             # TODO: find a better way to identify cudaLaunchKernel
             return e.name == "cudaLaunchKernel"
 
-        def is_cuda_kernel(e):
+        def is_cuda_kernel(e) -> bool:
             # TODO: find a better way to identify CUDA Kernel
             return e.device_type() == DeviceType.CUDA and "mem" not in e.name.lower()
 

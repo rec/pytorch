@@ -244,16 +244,16 @@ class SymNode:
         else:
             return None
 
-    def is_int(self):
+    def is_int(self) -> bool:
         return self.pytype is int
 
-    def is_float(self):
+    def is_float(self) -> bool:
         return self.pytype is float
 
-    def is_bool(self):
+    def is_bool(self) -> bool:
         return self.pytype is bool
 
-    def is_nested_int(self):
+    def is_nested_int(self) -> bool:
         # Unbacked SymInts cannot be nested int today
         return (
             self._hint is not None
@@ -459,7 +459,7 @@ class SymNode:
     def pow(self, other):
         return self.float_pow(other)
 
-    def is_non_overlapping_and_dense(self, sizes, strides):
+    def is_non_overlapping_and_dense(self, sizes, strides) -> bool:
         return self.is_non_overlapping_and_dense_indicator(sizes, strides).eq(to_node(self, 1))  # type: ignore[attr-defined]
 
     def int_(self):
@@ -613,13 +613,13 @@ class SymNode:
     def bool_(self):
         return self.guard_bool("", 0)
 
-    def is_symbolic(self):
+    def is_symbolic(self) -> bool:
         return True
 
     def nested_int(self):
         return None
 
-    def is_constant(self):
+    def is_constant(self) -> bool:
         return False
 
 
@@ -1661,7 +1661,7 @@ def _make_user_magic(method, user_type):
             return x.node.guard_bool("", 0)
         raise AssertionError("expect to be called with constant SymBools")
 
-    def is_constant(x):
+    def is_constant(x) -> bool:
         if isinstance(x, (int, float, bool)):
             return True
         if isinstance(x, (SymInt, SymFloat, SymBool)):

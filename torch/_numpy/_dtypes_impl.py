@@ -109,11 +109,11 @@ _NEP50_FUNCS_TENSOR_ONLY = (
 )
 
 
-def is_scalar(x):
+def is_scalar(x) -> bool:
     return isinstance(x, _SCALAR_TYPES)
 
 
-def is_scalar_or_symbolic(x):
+def is_scalar_or_symbolic(x) -> bool:
     return isinstance(x, _SCALAR_AND_SYMBOLIC_TYPES)
 
 
@@ -133,11 +133,11 @@ def _dtype_for_scalar_or_tensor(x):
     return x.dtype if isinstance(x, torch.Tensor) else _dtype_for_scalar(type(x))
 
 
-def is_float_or_fp_tensor(x):
+def is_float_or_fp_tensor(x) -> bool:
     return _dtype_for_scalar_or_tensor(x).is_floating_point
 
 
-def is_complex_or_complex_tensor(x):
+def is_complex_or_complex_tensor(x) -> bool:
     return _dtype_for_scalar_or_tensor(x).is_complex
 
 

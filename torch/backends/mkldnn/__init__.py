@@ -7,7 +7,7 @@ import torch
 from torch.backends import __allow_nonbracketed_mutation, ContextProp, PropModule
 
 
-def is_available():
+def is_available() -> bool:
     r"""Return whether PyTorch is built with MKL-DNN support."""
     return torch._C._has_mkldnn
 
@@ -94,7 +94,7 @@ class MkldnnModule(PropModule):
     def __init__(self, m, name):
         super().__init__(m, name)
 
-    def is_available(self):
+    def is_available(self) -> bool:
         return is_available()
 
     enabled = ContextProp(torch._C._get_mkldnn_enabled, torch._C._set_mkldnn_enabled)

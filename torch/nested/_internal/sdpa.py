@@ -364,7 +364,7 @@ def _cumulative_and_max_seq_len_nnz(qkv: torch.Tensor) -> tuple[torch.Tensor, in
     return cumulative_seqlen, max_seqlen, n_elem
 
 
-def _is_safe_to_get_storage_as_tensor(tensor: torch.Tensor):
+def _is_safe_to_get_storage_as_tensor(tensor: torch.Tensor) -> bool:
     # This function checks if a nested tensor is valid for
     # use with the flash-attention and efficient_attention kernels without
     # needing to call contiguous on the nested tensor input.
@@ -650,7 +650,7 @@ def _post_process_flash_output(out: torch.Tensor, og_size):
     return out
 
 
-def _is_computing_meta_flops(x):
+def _is_computing_meta_flops(x) -> bool:
     # Note: there's a use case of using meta tensors & the dispatch-based flop counter.
     # We can use this function to check for this scenario in order to handle it specially.
     if not torch.jit.is_scripting() and x.device.type == "meta":

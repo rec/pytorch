@@ -52,7 +52,7 @@ def ordered_set(*items):
 
 # This function indicates if the backend device
 # supports non-contiguous tensors
-def is_noncontiguous_supported(device):
+def is_noncontiguous_supported(device) -> bool:
     return device.type != "hpu"
 
 
@@ -112,7 +112,7 @@ def contains_tensor_types(type):
 
 
 @functools.lru_cache(None)
-def _is_tensor_constructor(func: OpOverload):
+def _is_tensor_constructor(func: OpOverload) -> bool:
     assert isinstance(func, OpOverload)
     schema = func._schema
     if any(contains_tensor_types(arg.type) for arg in schema.arguments):
@@ -142,7 +142,7 @@ def register_op_impl(run_impl_check: Union[Callable[[OpOverload], bool], OpOverl
     return impl_decorator
 
 
-def _is_op_registered_to_fake_rule(op):
+def _is_op_registered_to_fake_rule(op) -> bool:
     return op in op_implementations_dict
 
 
@@ -230,7 +230,7 @@ def stride_incorrect_op(op):
 def wordaround_stride_incorrect_op(fake_mode, func, *args, **kwargs):
     # This is a workaround for meta implmentations with incorrect strides
 
-    def is_symbolic(x):
+    def is_symbolic(x) -> bool:
         if isinstance(x, FakeTensor):
             return x._has_symbolic_sizes_strides
         if isinstance(x, (torch.SymInt, torch.SymFloat, torch.SymBool)):
@@ -626,7 +626,7 @@ def run_and_return_new_tensor_of_input_device(fake_mode, func, args, kwargs):
 _is_builtin_namespaces = ordered_set("aten", "prims", "prim")
 
 
-def is_builtin(op):
+def is_builtin(op) -> bool:
     return op.namespace in _is_builtin_namespaces
 
 

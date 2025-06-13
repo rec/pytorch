@@ -286,7 +286,7 @@ def layout(func, *args, **kwargs):
 
 
 @register_dispatch_func([torch.ops.aten.is_contiguous])
-def is_contiguous(func, *args, **kwargs):
+def is_contiguous(func, *args, **kwargs) -> bool:
     data = _get_data(args[0])
     if data.is_sparse:
         raise ValueError("MaskedTensors with sparse data do not have is_contiguous")
@@ -294,7 +294,7 @@ def is_contiguous(func, *args, **kwargs):
 
 
 @register_dispatch_func([torch.ops.aten.is_strides_like_format])
-def is_strides_like_format(func, *args, **kwargs):
+def is_strides_like_format(func, *args, **kwargs) -> bool:
     data = _get_data(args[0])
     if data.is_sparse:
         raise ValueError(
@@ -304,7 +304,7 @@ def is_strides_like_format(func, *args, **kwargs):
 
 
 @register_dispatch_func([torch.ops.aten.is_non_overlapping_and_dense])
-def is_non_overlapping_and_dense(func, *args, **kwargs):
+def is_non_overlapping_and_dense(func, *args, **kwargs) -> bool:
     data = _get_data(args[0])
     if data.is_sparse:
         raise ValueError(
@@ -507,13 +507,13 @@ def _sparse_coo_tensor_with_dims_and_tensors(func, *args, **kwargs):
 
 
 @register_dispatch_func([torch.ops.aten.is_same_size])
-def is_same_size(func, *args, **kwargs):
+def is_same_size(func, *args, **kwargs) -> bool:
     _check_args_kwargs_length(args, kwargs, f"__torch_dispatch__, {func}", len_args=2)
     return _get_data(args[0]).is_same_size(_get_data(args[1]))
 
 
 @register_dispatch_func([torch.ops.aten._is_any_true])
-def _is_any_true(func, *args, **kwargs):
+def _is_any_true(func, *args, **kwargs) -> bool:
     _check_args_kwargs_length(
         args, kwargs, f"__torch_dispatch__, {func}", len_args=1, len_kwargs=0
     )

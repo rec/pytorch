@@ -593,7 +593,7 @@ class Function(_SingleLevelFunction):
         return (ctx._autograd_function_id,)
 
 
-def _is_setup_context_defined(fn):
+def _is_setup_context_defined(fn) -> bool:
     return fn != _SingleLevelFunction.setup_context
 
 

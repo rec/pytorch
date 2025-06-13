@@ -117,7 +117,7 @@ def validate_input_col(fn: Callable, input_col: Optional[Union[int, tuple, list]
                 )
 
 
-def _is_local_fn(fn):
+def _is_local_fn(fn) -> bool:
     # Functions or Methods
     if hasattr(fn, "__code__"):
         return fn.__code__.co_flags & inspect.CO_NESTED

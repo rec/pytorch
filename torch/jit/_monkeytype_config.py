@@ -27,7 +27,7 @@ except ImportError:
 
 
 # Checks whether a class is defind in `torch.*` modules
-def is_torch_native_class(cls):
+def is_torch_native_class(cls) -> bool:
     if not hasattr(cls, "__module__"):
         return False
 

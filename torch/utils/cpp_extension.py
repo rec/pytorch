@@ -2282,7 +2282,7 @@ def _write_ninja_file_and_build_library(
         error_prefix=f"Error building extension '{name}'")
 
 
-def is_ninja_available():
+def is_ninja_available() -> bool:
     """Return ``True`` if the `ninja <https://ninja-build.org/>`_ build system is available on the system, ``False`` otherwise."""
     try:
         subprocess.check_output('ninja --version'.split())

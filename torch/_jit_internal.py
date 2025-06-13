@@ -1000,10 +1000,10 @@ def _check_overload_body(func):
 
     body = parsed_def.ast.body[0].body
 
-    def is_pass(x):
+    def is_pass(x) -> bool:
         return isinstance(x, ast.Pass)
 
-    def is_ellipsis(x):
+    def is_ellipsis(x) -> bool:
         return (
             isinstance(x, ast.Expr)
             and isinstance(x.value, ast.Constant)
@@ -1159,7 +1159,7 @@ def is_dict(ann) -> bool:
     return ann.__module__ in ("builtins", "typing") and ann_origin is dict
 
 
-def is_union(ann):
+def is_union(ann) -> bool:
     if ann is Union:
         raise_error_container_parameter_missing("Union")
 
@@ -1170,18 +1170,18 @@ def is_union(ann):
     )
 
 
-def is_optional(ann):
+def is_optional(ann) -> bool:
     if ann is Optional:
         raise_error_container_parameter_missing("Optional")
 
-    def is_optional_as_optional(ann):
+    def is_optional_as_optional(ann) -> bool:
         return (
             hasattr(ann, "__module__")
             and ann.__module__ == "typing"
             and (get_origin(ann) is Optional)
         )
 
-    def is_union_as_optional(ann):
+    def is_union_as_optional(ann) -> bool:
         ann_args = get_args(ann)
         return len(ann_args) == 2 and (None in ann_args or type(None) in ann_args)
 

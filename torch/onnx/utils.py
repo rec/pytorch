@@ -541,7 +541,7 @@ def export(
     return None
 
 
-def _is_constant_tensor_list(node):
+def _is_constant_tensor_list(node) -> bool:
     if node.kind() != "prim::Constant":
         return False
     output_type = node.output().type()

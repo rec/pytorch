@@ -1963,7 +1963,7 @@ def is_tensor_method_or_property(func: Callable) -> bool:
     return func in _get_tensor_methods() or func.__name__ == "__get__"
 
 
-def is_tensor_like(inp):
+def is_tensor_like(inp) -> bool:
     """
     Returns ``True`` if the passed-in input is a Tensor-like.
 

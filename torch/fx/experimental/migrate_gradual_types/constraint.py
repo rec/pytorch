@@ -625,19 +625,19 @@ class BVar:
             return False
 
 
-def is_algebraic_expression(constraint):
+def is_algebraic_expression(constraint) -> bool:
     if isinstance(constraint, BinConstraintD):
         return constraint.op in [op_add, op_sub, op_div, op_mul, op_mod]
     else:
         return isinstance(constraint, Prod)
 
 
-def is_bool_expr(constraint):
+def is_bool_expr(constraint) -> bool:
     if isinstance(constraint, BinConstraintD):
         return constraint.op in [op_gt, op_lt, op_neq, op_eq]
     else:
         return isinstance(constraint, (BVar, Conj, Disj))
 
 
-def is_dim(d):
+def is_dim(d) -> bool:
     return isinstance(d, (DVar, int)) or d == Dyn

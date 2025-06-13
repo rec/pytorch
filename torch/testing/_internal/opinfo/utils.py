@@ -135,7 +135,7 @@ def dtypes_dispatch_hint(dtypes):
     )
 
 
-def is_dynamic_dtype_set(op):
+def is_dynamic_dtype_set(op) -> bool:
     # Detect if the OpInfo entry acquired dtypes dynamically
     # using `get_supported_dtypes`.
     return op.dynamic_dtypes
@@ -164,7 +164,7 @@ def np_unary_ufunc_integer_promotion_wrapper(fn):
     #   integer types to the default scalar type.
 
     # Helper to determine if promotion is needed
-    def is_integral(dtype):
+    def is_integral(dtype) -> bool:
         return dtype in [
             np.bool_,
             bool,

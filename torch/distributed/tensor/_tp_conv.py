@@ -16,7 +16,7 @@ def _requires_data_exchange(padding):
     return padding[1] != 0
 
 
-def _is_supported(input_size, kernel_size, stride, padding, dilation):
+def _is_supported(input_size, kernel_size, stride, padding, dilation) -> bool:
     if dilation[1] != 1:
         raise RuntimeError("Dilation must be 1 for tensor parallel convolution.")
     if padding[1] != 0:

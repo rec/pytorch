@@ -304,7 +304,7 @@ or /.local/lib/ or /usr/local/lib/ or /usr/local/lib64/ or /usr/lib or /usr/lib6
                     break
         return lib_set or lib_find
 
-    def is_numactl_available(self):
+    def is_numactl_available(self) -> bool:
         numactl_available = False
         try:
             cmd = ["numactl", "-C", "0", "-m", "0", "hostname"]

@@ -62,7 +62,7 @@ class AttributeTypeIsSupportedChecker(ast.NodeVisitor):
         source_lines = inspect.getsource(nn_module.__class__.__init__)
 
         # Ignore comments no matter the indentation
-        def is_useless_comment(line):
+        def is_useless_comment(line) -> bool:
             line = line.strip()
             return line.startswith("#") and not line.startswith("# type:")
 

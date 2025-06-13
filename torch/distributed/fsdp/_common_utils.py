@@ -186,7 +186,7 @@ class HandleTrainingState(Enum):
     SUMMON_FULL_PARAMS = auto()
 
 
-def _is_composable(state: _FSDPState):
+def _is_composable(state: _FSDPState) -> bool:
     # TODO: This is a temporary hack for differentiate between code paths.
     return not isinstance(state, nn.Module)
 

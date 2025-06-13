@@ -76,7 +76,7 @@ def is_bf16_supported(including_emulation: bool = True) -> bool:
     )
 
 
-def is_initialized():
+def is_initialized() -> bool:
     r"""Return whether PyTorch's XPU state has been initialized."""
     return _initialized and not _is_in_bad_fork()
 

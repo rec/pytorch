@@ -6,7 +6,7 @@ import torch
 from .expanded_weights_impl import ExpandedWeight
 
 
-def is_batch_first(expanded_args_and_kwargs):
+def is_batch_first(expanded_args_and_kwargs) -> bool:
     batch_first = None
     for arg in expanded_args_and_kwargs:
         if not isinstance(arg, ExpandedWeight):

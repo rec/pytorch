@@ -1321,7 +1321,7 @@ def trace_module(
     return module
 
 
-def is_tracing():
+def is_tracing() -> bool:
     """Return a boolean value.
 
     Returns ``True`` in tracing (if a function is called during the
