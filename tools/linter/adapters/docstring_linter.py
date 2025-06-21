@@ -131,7 +131,7 @@ class Block:
     @cached_property
     def is_override(self) -> bool:
         return not self.is_class and any(
-            d.rpartition(".")[2] == "override" for d in self.decorators
+            d.rpartition(".")[2] == "@override" for d in self.decorators
         )
 
     DATA_FIELDS = (
@@ -422,7 +422,8 @@ class DocstringLinter(_linter.FileLinter[DocstringFile]):
     def _is_bad_block(self, b: Block, df: DocstringFile) -> bool:
         max_lines = self._max_lines[b.category]
         return (
-            not df.omitted(df.tokens, b.begin, b.dedent)
+            not b.is_override
+            and not df.omitted(df.tokens, b.begin, b.dedent)
             and b.line_count > max_lines
             and len(b.docstring) < self.args.min_docstring
             and (self.args.lint_local or not b.is_local)
