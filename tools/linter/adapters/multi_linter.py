@@ -24,6 +24,7 @@ _COMMIT_IDS_TO_REPORT = 3
 _COMMITS_COMMAND = f"git log -{_COMMIT_IDS_TO_REPORT} --pretty=format:%h"
 
 
+# TODO: count whether functions have full annotations
 # TODO: a linter for boolean
 # TODO: Count `from __future__ import annotations` somewhere!
 # This line can be found in `outgoing_imports`.
