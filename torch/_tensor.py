@@ -24,7 +24,8 @@ from torch.overrides import (
     handle_torch_function,
     has_torch_function,
     has_torch_function_unary,
-    has_torch_function_variadic,
+    wrap_torch_function_unary,
+    wrap_torch_function_variadic,
 )
 
 
@@ -108,6 +109,7 @@ def _dtype_to_typestr(dtype):
 class Tensor(torch._C.TensorBase):
     _is_param: bool
 
+    @wrap_torch_function_unary
     def _clear_non_serializable_cached_data(self):
         r"""Clears any data cached in the tensor's ``__dict__`` that would prevent the tensor
         from being serialized.
@@ -120,10 +122,6 @@ class Tensor(torch._C.TensorBase):
         Additional data cleared within the override must be able to be re-cached transparently
         to avoid breaking subclass functionality.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor._clear_non_serializable_cached_data, (self,), self
-            )
         # NB: Wrapper subclasses that implement custom-dispatched sizes / strides cache
         # this info via non-serializable PyCapsules.
         CACHED_SIZES_STRIDES_KEYS = [
@@ -135,9 +133,8 @@ class Tensor(torch._C.TensorBase):
         for key in CACHED_SIZES_STRIDES_KEYS:
             self.__dict__.pop(key, None)
 
+    @wrap_torch_function_unary
     def __deepcopy__(self, memo):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__deepcopy__, (self,), self, memo)
         if not self.is_leaf:
             raise RuntimeError(
                 "Only Tensors created explicitly by the user "
@@ -291,6 +288,7 @@ class Tensor(torch._C.TensorBase):
         self._clear_non_serializable_cached_data()
         return (_rebuild_from_type_v2, (func, type(self), args, state))
 
+    @wrap_torch_function_unary
     def storage(self):
         r"""
         storage() -> torch.TypedStorage
@@ -303,9 +301,6 @@ class Tensor(torch._C.TensorBase):
             :class:`UntypedStorage` will be the only storage class. To access the
             :class:`UntypedStorage` directly, use :attr:`Tensor.untyped_storage()`.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.storage, (self,), self)
-
         torch.storage._warn_typed_storage_removal(stacklevel=2)
         return self._typed_storage()
 
@@ -540,9 +535,8 @@ class Tensor(torch._C.TensorBase):
 
             return (rebuild_func, args)
 
+    @wrap_torch_function_unary
     def __setstate__(self, state):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__setstate__, (self,), self, state)
         # Warning: this method is NOT called when you torch.load() a tensor;
         # that is managed by _rebuild_tensor_v2
         if not self.is_leaf:
@@ -559,14 +553,12 @@ class Tensor(torch._C.TensorBase):
         # See Note [Don't serialize hooks]
         self.requires_grad, _, self._backward_hooks = state
 
+    @wrap_torch_function_unary
     def __repr__(self, *, tensor_contents=None):
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.__repr__, (self,), self, tensor_contents=tensor_contents
-            )
         # All strings are unicode in Python 3.
         return torch._tensor_str._str(self, tensor_contents=tensor_contents)
 
+    @wrap_torch_function_unary
     def backward(
         self, gradient=None, retain_graph=None, create_graph=False, inputs=None
     ):
@@ -612,20 +604,11 @@ class Tensor(torch._C.TensorBase):
                 provided, the gradient is accumulated into all the leaf Tensors that were
                 used to compute the :attr:`tensors`. Defaults to ``None``.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.backward,
-                (self,),
-                self,
-                gradient=gradient,
-                retain_graph=retain_graph,
-                create_graph=create_graph,
-                inputs=inputs,
-            )
         torch.autograd.backward(
             self, gradient, retain_graph, create_graph, inputs=inputs
         )
 
+    @wrap_torch_function_unary
     def register_hook(self, hook):
         r"""Registers a backward hook.
 
@@ -659,8 +642,6 @@ class Tensor(torch._C.TensorBase):
 
             >>> h.remove()  # removes the hook
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.register_hook, (self,), self, hook)
         if not self.requires_grad:
             raise RuntimeError(
                 "cannot register a hook on a tensor that doesn't require gradient"
@@ -676,6 +657,7 @@ class Tensor(torch._C.TensorBase):
         self._backward_hooks[handle.id] = hook
         return handle
 
+    @wrap_torch_function_unary
     def register_post_accumulate_grad_hook(self, hook):
         r"""Registers a backward hook that runs after grad accumulation.
 
@@ -714,10 +696,6 @@ class Tensor(torch._C.TensorBase):
 
             >>> h.remove()  # removes the hook
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.register_post_accumulate_grad_hook, (self,), self, hook
-            )
         if not self.requires_grad:
             raise RuntimeError(
                 "cannot register a hook on a tensor that doesn't require gradient"
@@ -795,15 +773,15 @@ class Tensor(torch._C.TensorBase):
     """,
     )
 
+    @wrap_torch_function_unary
     def is_shared(self):
         r"""Checks if tensor is in shared memory.
 
         This is always ``True`` for CUDA tensors.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.is_shared, (self,), self)
         return self._typed_storage()._is_shared()
 
+    @wrap_torch_function_unary
     def share_memory_(self):
         r"""Moves the underlying storage to shared memory.
 
@@ -812,11 +790,10 @@ class Tensor(torch._C.TensorBase):
 
         See :meth:`torch.UntypedStorage.share_memory_` for more details.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.share_memory_, (self,), self)
         self._typed_storage()._share_memory_()
         return self
 
+    @wrap_torch_function_variadic
     def module_load(self, other, assign=False):
         r"""Defines how to transform ``other`` when loading it into ``self`` in :meth:`~nn.Module.load_state_dict`.
 
@@ -837,25 +814,20 @@ class Tensor(torch._C.TensorBase):
             assign (bool): the assign argument passed to :meth:`nn.Module.load_state_dict`
 
         """
-        if has_torch_function_variadic(self, other):
-            return handle_torch_function(
-                Tensor.module_load, (self, other), self, other, assign=assign
-            )
-
         if assign:
             return other.detach()
         else:
             return self.copy_(other).detach()
 
+    @wrap_torch_function_unary
     def __reversed__(self):
         r"""Reverses the tensor along dimension 0."""
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__reversed__, (self,), self)
         if self.dim() == 0:
             return self
         else:
             return self.flip(0)
 
+    @wrap_torch_function_unary
     def norm(
         self,
         p: Optional[Union[float, str]] = "fro",
@@ -864,10 +836,6 @@ class Tensor(torch._C.TensorBase):
         dtype=None,
     ):
         r"""See :func:`torch.norm`"""
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.norm, (self,), self, p=p, dim=dim, keepdim=keepdim, dtype=dtype
-            )
         return torch.norm(self, p, dim, keepdim, dtype=dtype)
 
     def solve(self, other):
@@ -890,14 +858,10 @@ class Tensor(torch._C.TensorBase):
 
         return _symeig(self, eigenvectors=eigenvectors)
 
+    @wrap_torch_function_unary
     def lu(self, pivot=True, get_infos=False):
         r"""See :func:`torch.lu`"""
         # If get_infos is True, then we don't need to check for errors and vice versa
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.lu, (self,), self, pivot=pivot, get_infos=get_infos
-            )
-
         LU, pivots, infos = torch._lu_with_info(
             self, pivot=pivot, check_errors=(not get_infos)
         )
@@ -906,6 +870,7 @@ class Tensor(torch._C.TensorBase):
         else:
             return LU, pivots
 
+    @wrap_torch_function_unary
     def stft(
         self,
         n_fft: int,
@@ -925,22 +890,6 @@ class Tensor(torch._C.TensorBase):
           This function changed signature at version 0.4.1. Calling with
           the previous signature may cause error or return incorrect result.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.stft,
-                (self,),
-                self,
-                n_fft,
-                hop_length=hop_length,
-                win_length=win_length,
-                window=window,
-                center=center,
-                pad_mode=pad_mode,
-                normalized=normalized,
-                onesided=onesided,
-                return_complex=return_complex,
-                align_to_window=align_to_window,
-            )
         return torch.stft(
             self,
             n_fft,
@@ -955,6 +904,7 @@ class Tensor(torch._C.TensorBase):
             align_to_window=align_to_window,
         )
 
+    @wrap_torch_function_unary
     def istft(
         self,
         n_fft: int,
@@ -968,21 +918,6 @@ class Tensor(torch._C.TensorBase):
         return_complex: bool = False,
     ):
         r"""See :func:`torch.istft`"""
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.istft,
-                (self,),
-                self,
-                n_fft,
-                hop_length=hop_length,
-                win_length=win_length,
-                window=window,
-                center=center,
-                normalized=normalized,
-                onesided=onesided,
-                length=length,
-                return_complex=return_complex,
-            )
         return torch.istft(
             self,
             n_fft,
@@ -996,28 +931,23 @@ class Tensor(torch._C.TensorBase):
             return_complex=return_complex,
         )
 
+    @wrap_torch_function_unary
     def resize(self, *sizes):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.resize, (self,), self, *sizes)
         warnings.warn("non-inplace resize is deprecated")
         from torch.autograd._functions import Resize
 
         return Resize.apply(self, sizes)
 
+    @wrap_torch_function_variadic
     def resize_as(self, tensor):
-        if has_torch_function_variadic(self, tensor):
-            return handle_torch_function(Tensor.resize_as, (self, tensor), self, tensor)
         warnings.warn("non-inplace resize_as is deprecated")
         from torch.autograd._functions import Resize
 
         return Resize.apply(self, tensor.size())
 
+    @wrap_torch_function_unary
     def split(self, split_size, dim=0):
         r"""See :func:`torch.split`"""
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.split, (self,), self, split_size, dim=dim
-            )
         if isinstance(split_size, Tensor):
             try:
                 split_size = int(split_size)
@@ -1029,21 +959,12 @@ class Tensor(torch._C.TensorBase):
         else:
             return torch._VF.split_with_sizes(self, split_size, dim)
 
+    @wrap_torch_function_unary
     def unique(self, sorted=True, return_inverse=False, return_counts=False, dim=None):
         r"""Returns the unique elements of the input tensor.
 
         See :func:`torch.unique`
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.unique,
-                (self,),
-                self,
-                sorted=sorted,
-                return_inverse=return_inverse,
-                return_counts=return_counts,
-                dim=dim,
-            )
         return torch.unique(
             self,
             sorted=sorted,
@@ -1052,20 +973,12 @@ class Tensor(torch._C.TensorBase):
             dim=dim,
         )
 
+    @wrap_torch_function_unary
     def unique_consecutive(self, return_inverse=False, return_counts=False, dim=None):
         r"""Eliminates all but the first element from every consecutive group of equivalent elements.
 
         See :func:`torch.unique_consecutive`
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.unique_consecutive,
-                (self,),
-                self,
-                return_inverse=return_inverse,
-                return_counts=return_counts,
-                dim=dim,
-            )
         return torch.unique_consecutive(
             self, return_inverse=return_inverse, return_counts=return_counts, dim=dim
         )
@@ -1099,9 +1012,8 @@ class Tensor(torch._C.TensorBase):
     def __rmod__(self, other: Union["Tensor", int, float, bool, complex]) -> "Tensor":
         return torch.remainder(other, self)
 
+    @wrap_torch_function_unary
     def __format__(self, format_spec):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__format__, (self,), self, format_spec)
         if self.dim() == 0 and not self.is_meta and type(self) is Tensor:
             # Use detach() here to avoid the warning when converting a scalar Tensor that
             # requires gradients to a python number. It is ok for formatting.
@@ -1142,9 +1054,8 @@ class Tensor(torch._C.TensorBase):
     __neg__ = _C.TensorBase.neg
     __abs__ = _C.TensorBase.abs
 
+    @wrap_torch_function_unary
     def __len__(self):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__len__, (self,), self)
         if self.dim() == 0:
             raise TypeError("len() of a 0-d tensor")
         if torch._C._get_tracing_state():
@@ -1187,9 +1098,8 @@ class Tensor(torch._C.TensorBase):
         # subclass if needed.
         return id(self)
 
+    @wrap_torch_function_unary
     def __dir__(self):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__dir__, (self,), self)
         tensor_methods = dir(self.__class__)
         tensor_methods.remove("volatile")  # deprecated
         attrs = list(self.__dict__.keys())
@@ -1204,9 +1114,8 @@ class Tensor(torch._C.TensorBase):
     # Numpy array interface, to support `numpy.asarray(tensor) -> ndarray`
     __array_priority__ = 1000  # prefer Tensor ops over numpy ones
 
+    @wrap_torch_function_unary
     def __array__(self, dtype=None):
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__array__, (self,), self, dtype=dtype)
         if dtype is None:
             return self.numpy()
         else:
@@ -1214,16 +1123,14 @@ class Tensor(torch._C.TensorBase):
 
     # Wrap Numpy array again in a suitable tensor when done, to support e.g.
     # `numpy.sin(tensor) -> tensor` or `numpy.greater(tensor, 0) -> ByteTensor`
+    @wrap_torch_function_unary
     def __array_wrap__(self, array):
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.__array_wrap__, (self,), self, array=array
-            )
         if array.dtype == bool:
             # Workaround, torch has no built-in bool tensor
             array = array.astype("uint8")
         return torch.from_numpy(array)
 
+    @wrap_torch_function_unary
     def __contains__(self, element: Any, /) -> bool:
         r"""Check if `element` is present in tensor
 
@@ -1231,8 +1138,6 @@ class Tensor(torch._C.TensorBase):
             element (Tensor or scalar): element to be checked
                 for presence in current tensor"
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__contains__, (self,), self, element)
         if isinstance(
             element, (torch.Tensor, Number, torch.SymInt, torch.SymFloat, torch.SymBool)
         ):
@@ -1293,19 +1198,18 @@ class Tensor(torch._C.TensorBase):
 
         return dict(typestr=typestr, shape=shape, strides=strides, data=data, version=2)
 
+    @wrap_torch_function_unary
     def storage_type(self):
         r"""storage_type() -> type
 
         Returns the type of the underlying storage.
 
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.storage_type, (self,), self)
-
         torch.storage._warn_typed_storage_removal()
 
         return self._typed_storage()._get_legacy_storage_class()
 
+    @wrap_torch_function_unary
     def refine_names(self, *names):
         r"""Refines the dimension names of :attr:`self` according to :attr:`names`.
 
@@ -1345,11 +1249,10 @@ class Tensor(torch._C.TensorBase):
             The named tensor API is experimental and subject to change.
 
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.refine_names, (self,), self, *names)
         names = resolve_ellipsis(names, self.names, "refine_names")
         return super().refine_names(names)
 
+    @wrap_torch_function_unary
     def align_to(self, *names):
         r"""Permutes the dimensions of the :attr:`self` tensor to match the order
         specified in :attr:`names`, adding size-one dims for any new names.
@@ -1386,8 +1289,6 @@ class Tensor(torch._C.TensorBase):
             The named tensor API is experimental and subject to change.
 
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.align_to, (self,), self, *names)
         ellipsis_idx = single_ellipsis_index(names, "align_to")
         if ellipsis_idx is None:
             return super().align_to(names)
@@ -1395,6 +1296,7 @@ class Tensor(torch._C.TensorBase):
             [name for name in names if not is_ellipsis(name)], ellipsis_idx
         )
 
+    @wrap_torch_function_unary
     def unflatten(self, dim, sizes):  # type: ignore[override]
         r"""
         unflatten(dim, sizes) -> Tensor
@@ -1402,9 +1304,6 @@ class Tensor(torch._C.TensorBase):
         See :func:`torch.unflatten`.
 
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.unflatten, (self,), self, dim, sizes)
-
         if not sizes:
             raise RuntimeError("unflatten: sizes must be non-empty")
 
@@ -1417,13 +1316,9 @@ class Tensor(torch._C.TensorBase):
         else:
             return super().unflatten(dim, sizes)
 
+    @wrap_torch_function_unary
     def rename_(self, *names, **rename_map):
         """In-place version of :meth:`~Tensor.rename`."""
-
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.rename_, (self,), self, *names, **rename_map
-            )
 
         # Note [rename_ / rename API]
         # The Python API for these is different from the C++ API. In Python:
@@ -1432,6 +1327,7 @@ class Tensor(torch._C.TensorBase):
         # C++ is static, making it difficult to implement similar behavior.
         return update_names(self, names, rename_map, inplace=True)
 
+    @wrap_torch_function_unary
     def rename(self, *names, **rename_map):
         """Renames dimension names of :attr:`self`.
 
@@ -1466,11 +1362,6 @@ class Tensor(torch._C.TensorBase):
             The named tensor API is experimental and subject to change.
 
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor.rename, (self,), self, *names, **rename_map
-            )
-
         # See Note [rename_ / rename API]
         return update_names(self, names, rename_map, inplace=False)
 
@@ -1487,6 +1378,7 @@ class Tensor(torch._C.TensorBase):
         """
         return self.to_sparse()
 
+    @wrap_torch_function_unary
     def dim_order(
         self, *, ambiguity_check: Union[bool, list[torch.memory_format]] = False
     ):
@@ -1537,9 +1429,6 @@ class Tensor(torch._C.TensorBase):
         .. warning::
             The dim_order tensor API is experimental and subject to change.
         """
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.dim_order, (self,), self)
-
         if self.is_sparse:
             raise AttributeError(
                 f"Can't get dim order on sparse type: {self.type()} "
@@ -1617,12 +1506,8 @@ class Tensor(torch._C.TensorBase):
 
         return tuple(utils.compute_elementwise_output_logical_to_physical_perm(self))
 
+    @wrap_torch_function_unary
     def _update_names(self, names, inplace):
-        if has_torch_function_unary(self):
-            return handle_torch_function(
-                Tensor._update_names, (self,), self, names, inplace
-            )
-
         # See Note [rename_ / rename API]
         if inplace:
             return super().rename_(names)
@@ -1659,6 +1544,7 @@ class Tensor(torch._C.TensorBase):
 
     __torch_dispatch__ = _C._disabled_torch_dispatch_impl
 
+    @wrap_torch_function_unary
     def __dlpack__(
         self,
         *,
@@ -1695,16 +1581,6 @@ class Tensor(torch._C.TensorBase):
             copy (bool or None): An optional boolean indicating whether or not to copy
                 ``self``. If None, PyTorch will copy only if necessary.
         """
-        if has_torch_function_unary(self):
-            args = (self,)
-            kwargs = {
-                "stream": stream,
-                "max_version": max_version,
-                "dl_device": dl_device,
-                "copy": copy,
-            }
-            return handle_torch_function(Tensor.__dlpack__, (self,), *args, **kwargs)
-
         # DLPack capsules can't capture all of PyTorch's semantics,
         # so we prohibit exporting tensors that would lose their properties like
         # requires_grad and having the conjugate bit set.
@@ -1783,10 +1659,8 @@ class Tensor(torch._C.TensorBase):
 
         return _C._to_dlpack_versioned(self, dl_device=dl_device, copy=copy)
 
+    @wrap_torch_function_unary
     def __dlpack_device__(self) -> tuple[enum.IntEnum, int]:
-        if has_torch_function_unary(self):
-            return handle_torch_function(Tensor.__dlpack_device__, (self,), self)
-
         from torch.utils.dlpack import DLDeviceType
 
         device = self.device

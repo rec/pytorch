@@ -799,6 +799,7 @@ class SymBool:
             return hash(builtins.bool(self))
 
 
+@overrides.wrap_torch_function_unary
 def sym_not(a):
     r"""SymInt-aware utility for logical negation.
 
@@ -807,8 +808,6 @@ def sym_not(a):
     """
     import sympy
 
-    if overrides.has_torch_function_unary(a):
-        return overrides.handle_torch_function(sym_not, (a,), a)
     if hasattr(a, "__sym_not__"):
         return a.__sym_not__()
     if isinstance(a, sympy.Basic):
@@ -816,14 +815,13 @@ def sym_not(a):
     return not a
 
 
+@overrides.wrap_torch_function_unary
 def sym_float(a):
     r"""SymInt-aware utility for float casting.
 
     Args:
         a (SymInt, SymFloat, or object): Object to cast
     """
-    if overrides.has_torch_function_unary(a):
-        return overrides.handle_torch_function(sym_float, (a,), a)
     if isinstance(a, SymFloat):
         return a
     elif hasattr(a, "__sym_float__"):
@@ -831,14 +829,13 @@ def sym_float(a):
     return builtins.float(a)  # type: ignore[operator]
 
 
+@overrides.wrap_torch_function_unary
 def sym_int(a):
     r"""SymInt-aware utility for int casting.
 
     Args:
         a (SymInt, SymFloat, or object): Object to cast
     """
-    if overrides.has_torch_function_unary(a):
-        return overrides.handle_torch_function(sym_int, (a,), a)
     if isinstance(a, SymInt):
         return a
     elif isinstance(a, SymFloat):
@@ -934,9 +931,8 @@ def sym_sum(args):
 
 # Drop in replacement for math.sqrt, math.sin, math.cos etc
 def _get_sym_math_fn(name):
+    @overrides.wrap_torch_function_unary
     def fn(a):
-        if overrides.has_torch_function_unary(a):
-            return overrides.handle_torch_function(fn, (a,), a)
         if isinstance(a, SymInt):
             a = torch.sym_float(a)
         if hasattr(a, f"__sym_{name}__"):

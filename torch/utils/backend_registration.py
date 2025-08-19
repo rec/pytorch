@@ -3,7 +3,11 @@ from typing import Optional, Union
 
 import torch
 from torch._C import _get_privateuse1_backend_name, _rename_privateuse1_backend
-from torch.overrides import handle_torch_function, has_torch_function_unary
+from torch.overrides import (
+    handle_torch_function,
+    has_torch_function_unary,
+    wrap_torch_function_unary,
+)
 
 
 __all__ = ["rename_privateuse1_backend", "generate_methods_for_privateuse1_backend"]
@@ -132,6 +136,7 @@ def _generate_tensor_methods_for_privateuse1_backend(custom_backend_name: str) -
     wrap_tensor_backend.fget.__name__ = f"is_{custom_backend_name}"  # type: ignore[attr-defined]
     setattr(torch.Tensor, f"is_{custom_backend_name}", wrap_tensor_backend)
 
+    @wrap_torch_function_unary
     def wrap_tensor_to(
         self: torch.Tensor,
         device: Optional[Union[int, torch.device]] = None,

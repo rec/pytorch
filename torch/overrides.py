@@ -25,12 +25,13 @@ import __future__  # noqa: F404
 import collections
 import contextlib
 import functools
+import itertools
 import types
 import warnings
 from collections.abc import Iterable
 from functools import wraps
 from typing import Any, Callable, Optional, TypeVar
-from typing_extensions import ParamSpec
+from typing_extensions import Concatenate, ParamSpec
 
 import torch
 from torch._C import (
@@ -47,16 +48,20 @@ from torch._C import (
 
 
 __all__ = [
+    "enable_reentrant_dispatch",
     "get_ignored_functions",
     "get_overridable_functions",
     "get_testing_overrides",
     "handle_torch_function",
     "has_torch_function",
-    "resolve_name",
+    "has_torch_function_unary",
+    "has_torch_function_variadic",
     "is_tensor_like",
     "is_tensor_method_or_property",
+    "resolve_name",
     "wrap_torch_function",
-    "enable_reentrant_dispatch",
+    "wrap_torch_function_unary",
+    "wrap_torch_function_variadic",
 ]
 
 _P = ParamSpec("_P")
@@ -1808,6 +1813,38 @@ has_torch_function_variadic = _add_docstr(
     which skips unnecessary packing and unpacking work.
     """,
 )
+
+
+def wrap_torch_function_variadic(func: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Wrap a variadic functional op to handle overriding"""
+    names = list(func.__annotations__)
+    it = func.__annotations__.items()
+    tensor_args = [k for k, v in it if torch.Tensor in (v, *getattr(v, "__args__", ()))]
+    assert tensor_args, f"{func} does not have any tensor arguments"
+
+    @functools.wraps(func)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        it = itertools.chain(zip(names, args), kwargs.items())
+        tensors = [v for k, v in it if k in tensor_args]
+        if has_torch_function_variadic(*tensors):
+            return handle_torch_function(func, tensors, *args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
+def wrap_torch_function_unary(
+    func: Callable[Concatenate[torch.Tensor, _P], _R],
+) -> Callable[Concatenate[torch.Tensor, _P], _R]:
+    """Wrap a unary functional op to handle overriding"""
+
+    @functools.wraps(func)
+    def wrapped(input: torch.Tensor, *args: _P.args, **kwargs: _P.kwargs) -> _R:
+        if has_torch_function_unary(input):
+            return handle_torch_function(func, (input,), input, *args, **kwargs)
+        return func(input, *args, **kwargs)
+
+    return wrapped
 
 
 @functools.cache
