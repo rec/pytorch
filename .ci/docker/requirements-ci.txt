@@ -187,6 +187,11 @@ pytest==7.3.2
 #Pinned versions:
 #test that import: test_typing.py, test_cpp_extensions_aot.py, run_test.py
 
+pyright==1.1.405
+#Description: Type reporting and testing
+#Pinned versions:
+#test that import:
+
 pytest-xdist==3.3.1
 #Description: plugin for running pytest in parallel
 #Pinned versions:

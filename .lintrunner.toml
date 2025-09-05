@@ -1802,3 +1802,14 @@ command = [
   "python3",
   "tools/linter/adapters/gb_registry_linter.py",
 ]
+
+[[linter]]
+code = 'PYRIGHT_LINTER'
+command = [
+    'python3',
+    'tools/linter/adapters/pyright_linter.py',
+]
+include_patterns = [  # Can't be empty
+    "tools/linter/adapters/pyright_linter.py",
+]
+is_formatter = false

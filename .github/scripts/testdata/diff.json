@@ -1,0 +1,74 @@
+{
+    "before": {
+        "name": "HEAD~",
+        "commit_id": "dad54ca7c05",
+        "message": "A commit message"
+    },
+    "after": {
+        "name": "HEAD",
+        "commit_id": "3034dcc8032",
+        "message": "A comet massage"
+    },
+    "timestamp": "2025-09-26T11:26:55.980131",
+    "filename": "pyright_compare.000.dad54ca7c05-3034dcc8032.json",
+    "diff": {
+        "absolute": {
+            "exportedSymbolCounts": {
+                "withKnownType": 7,
+                "withAmbiguousType": -2,
+                "withUnknownType": -4
+            },
+            "otherSymbolCounts": {
+                "withKnownType": 11,
+                "withAmbiguousType": 2,
+                "withUnknownType": -7
+            },
+            "missingFunctionDocStringCount": -45,
+            "missingClassDocStringCount": 5,
+            "completenessScore": 0.0029010374569277686,
+            "filesAnalyzed": 4
+        },
+        "percent": {
+            "exportedSymbolCounts": {
+                "withKnownType": 0.11380263371809463,
+                "withAmbiguousType": -0.2364066193853428,
+                "withUnknownType": -0.042969169620797075
+            },
+            "otherSymbolCounts": {
+                "withKnownType": 0.36065573770491804,
+                "withAmbiguousType": 1.3071895424836601,
+                "withUnknownType": -0.3252788104089219
+            },
+            "missingFunctionDocStringCount": -1.085383502170767,
+            "missingClassDocStringCount": 0.45454545454545453,
+            "completenessScore": 0.7690508335663175,
+            "filesAnalyzed": 0.4576659038901602
+        },
+        "symbols": {
+            "added": [
+                "torch._tensor.Tensor.detach_",
+                "torch.xpu.memory.max_memory_allocated"
+            ],
+            "common": {
+                "torch.DisableTorchFunction": {
+                    "diagnostics": {
+                        "removed": [
+                            "Return type is unknown"
+                        ]
+                    }
+                },
+                "torch._tensor.Tensor.backward": {
+                    "diagnostics": {
+                        "added": [
+                            "Type annotation for parameter \"create_graph\" is missing",
+                            "Type annotation for parameter \"inputs\" is missing"
+                        ]
+                    }
+                }
+            },
+            "removed": [
+                "torch.device"
+            ]
+        }
+    }
+}
