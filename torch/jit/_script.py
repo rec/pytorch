@@ -14,9 +14,9 @@ import functools
 import inspect
 import pickle
 import warnings
-from collections.abc import Callable
-from typing import Any, Union
-from typing_extensions import deprecated
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Any, TypeVar, Union
+from typing_extensions import deprecated, Self
 
 import torch
 import torch._jit_internal as _jit_internal
@@ -54,6 +54,9 @@ from torch.package import PackageExporter, PackageImporter
 from torch.utils import set_module
 
 from ._serialization import validate_map_location
+
+
+_T = TypeVar("_T")
 
 
 type_trace_db = JitTypeTraceStore()  # DB to hold all call traces from MonkeyType
@@ -371,10 +374,10 @@ def script_method(fn):
 
 
 class ConstMap:
-    def __init__(self, const_mapping):
+    def __init__(self, const_mapping: Mapping[str, Any]) -> None:
         self.const_mapping = const_mapping
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         return self.const_mapping[attr]
 
 
@@ -461,7 +464,7 @@ if _enabled:
 
             self.__dict__["_initializing"] = False
 
-        def __getattr__(self, attr):
+        def __getattr__(self, attr: str) -> Any:
             if self.__dict__.get("_initializing"):
                 return super().__getattr__(attr)  # type: ignore[misc]
 
@@ -470,7 +473,7 @@ if _enabled:
 
             return getattr(self._c, attr)
 
-        def __setattr__(self, attr, value):
+        def __setattr__(self, attr: str, value: Any) -> None:
             if self.__dict__.get("_initializing"):
                 return super().__setattr__(attr, value)
 
@@ -481,7 +484,9 @@ if _enabled:
 
         # Delegate calls to magic methods like __len__ to the C++ module backing the
         # RecursiveScriptClass.
-        def forward_magic_method(self, method_name, *args, **kwargs):
+        def forward_magic_method(
+            self, method_name: str, *args: Any, **kwargs: Any
+        ) -> Any:
             if not self._c._has_method(method_name):
                 raise TypeError
 
@@ -491,7 +496,7 @@ if _enabled:
         def __getstate__(self):
             raise pickle.PickleError("ScriptClasses cannot be pickled")
 
-        def __iadd__(self, other):
+        def __iadd__(self, other: Self) -> Self:
             if self._c._has_method("__iadd__"):
                 return self.forward_magic_method("__iadd__", other)
             else:
@@ -533,12 +538,12 @@ if _enabled:
 
         forward: Callable[..., Any] = _CachedForward()  # type: ignore[assignment]
 
-        def __getattr__(self, attr):
+        def __getattr__(self, attr: str) -> Any:
             if "_actual_script_module" not in self.__dict__:
                 return super().__getattr__(attr)
             return getattr(self._actual_script_module, attr)
 
-        def __setattr__(self, attr, value):
+        def __setattr__(self, attr: str, value: Any) -> None:
             if "_actual_script_module" not in self.__dict__:
                 # Unwrap torch.jit.Attribute into a regular setattr + record
                 # the provided type in __annotations__.
@@ -792,16 +797,16 @@ if _enabled:
             )
             return self._c._save_to_buffer_for_mobile(*args, **kwargs)
 
-        def save_to_buffer(self, *args, **kwargs):
+        def save_to_buffer(self, *args: Any, **kwargs: Any) -> Any:
             return self._c.save_to_buffer(*args, **kwargs)
 
-        def get_debug_state(self, *args, **kwargs):
+        def get_debug_state(self, *args: Any, **kwargs: Any) -> Any:
             return self._c.get_debug_state()
 
-        def extra_repr(self):
+        def extra_repr(self) -> str:
             return f"original_name={self.original_name}"
 
-        def graph_for(self, *args, **kwargs):
+        def graph_for(self, *args: Any, **kwargs: Any) -> Any:
             return self.forward.graph_for(self, *args, **kwargs)  # type: ignore[attr-defined]
 
         @property
@@ -822,7 +827,7 @@ if _enabled:
             rcb = _jit_internal.createResolutionCallbackFromFrame(frames_up=1)
             self._c._define(self._concrete_type, src, rcb)
 
-        def __getattr__(self, attr):
+        def __getattr__(self, attr: str) -> Any:
             if "_initializing" not in self.__dict__:
                 raise RuntimeError(
                     "ScriptModule has not been initialized, did you forget to call super's init?"
@@ -846,7 +851,7 @@ if _enabled:
 
             return super().__getattr__(attr)
 
-        def __setattr__(self, attr, value):
+        def __setattr__(self, attr: str, value: Any) -> None:
             if self._initializing:
                 return super().__setattr__(attr, value)
 
@@ -873,17 +878,19 @@ if _enabled:
                 # It's fairly trivial to save enough info to warn in this case.
                 return super().__setattr__(attr, value)
 
-        def __copy__(self):
+        def __copy__(self) -> Self:
             return torch.jit._recursive.wrap_cpp_module(copy.copy(self._c))
 
-        def __deepcopy__(self, memo):
+        def __deepcopy__(self, memo: dict[int, Any] | None) -> Self:
             return torch.jit._recursive.wrap_cpp_module(copy.deepcopy(self._c, memo))
 
         # Python magic methods do method lookups on an object's class type, instead of looking up
         # the method defines on the class instance. In order to continue to expose the magic methods
         # of builtin-containers (ModuleList, Sequential, ModuleDict) to Python, we
         # define magic methods here as a shim to the correct attribute.
-        def forward_magic_method(self, method_name, *args, **kwargs):
+        def forward_magic_method(
+            self, method_name: str, *args: Any, **kwargs: Any
+        ) -> Any:
             self_method = getattr(self, method_name)
             if getattr(self_method, "__func__", None) == getattr(
                 RecursiveScriptModule, method_name
@@ -891,10 +898,10 @@ if _enabled:
                 raise NotImplementedError
             return self_method(*args, **kwargs)
 
-        def __iter__(self):
+        def __iter__(self) -> Iterator[Any]:
             return self.forward_magic_method("__iter__")
 
-        def __getitem__(self, idx):
+        def __getitem__(self, idx: int) -> Any:
             return self.forward_magic_method("__getitem__", idx)
 
         def __len__(self):
@@ -905,7 +912,7 @@ if _enabled:
 
         # dir is defined by the base nn.Module, so instead of throwing if
         # it is not overridden, we call into the nn.Module __dir__ method
-        def __dir__(self):
+        def __dir__(self) -> Sequence[str]:
             self_method = self.__dir__
             if (
                 self_method.__func__  # type: ignore[attr-defined]
@@ -1251,12 +1258,12 @@ def _script_impl(
 
 
 def script(
-    obj,
-    optimize=None,
-    _frames_up=0,
-    _rcb=None,
+    obj: Any,
+    optimize: None = None,
+    _frames_up: int = 0,
+    _rcb: Callable[[str], Any] | None = None,
     example_inputs: Union[list[tuple], dict[Callable, list[tuple]], None] = None,
-):
+) -> Any:
     r"""Script the function.
 
     Scripting a function or ``nn.Module`` will inspect the source code, compile
@@ -1555,7 +1562,7 @@ def _check_directly_compile_overloaded(obj):
         )
 
 
-def interface(obj):
+def interface(obj: _T) -> _T:
     r"""Decorate to annotate classes or modules of different types.
 
     This decorator can be used to define an interface that can be used to annotate
