@@ -41,8 +41,8 @@ class Block:
     # The index of the first INDENT token for this block
     indent: int
 
-    # The index of the DEDENT token for this end of this block
-    dedent: int
+    # The index of the DEDENT token for this end of this block: TODO soon no longer right
+    last_token: int
 
     # The docstring for the block
     docstring: str
@@ -76,15 +76,15 @@ class Block:
 
     @property
     def end_line(self) -> int:
-        if 0 <= self.dedent < len(self.tokens):
-            return self.tokens[self.dedent].start[0] - 1
+        if 0 <= self.last_token < len(self.tokens):
+            return self.tokens[self.last_token].start[0] - 1
         else:
             return self.tokens[-1].start[0]
             # Only happens in one case so far: a file whose last line was
             #
             #    def function(): ...
             #
-            # and the dedent correctly pointed to one past the end of self.tokens
+            # and the last_token correctly pointed to one past the end of self.tokens
 
     @property
     def line_count(self) -> int:
