@@ -113,7 +113,7 @@ def _make_block(
         ni = next_token(begin + 1, token.NAME, "Definition but no name")
         name = tokens[ni].string
         indent = next_token(ni + 1, token.INDENT, "Definition but no indent")
-        last_token = indent_to_last_token[indent]
+        last_token = indent_to_last_token[indent] - 1
         docstring = _docstring(tokens, indent)
     except ParseError as e:
         errors[t.line] = " ".join(e.args)
