@@ -13,20 +13,14 @@ if TYPE_CHECKING:
     from tokenize import TokenInfo
 
 
-class BlocksResult(NamedTuple):
-    blocks: list[Block]
-    parse_errors: dict[str, str]
-
-
-def blocks(pf: PythonFile) -> BlocksResult:
+def blocks(pf: PythonFile) -> list[Block]:
     blocks: list[Block] = []
-    parse_errors: dict[str, str] = {}
 
     def starts_block(t: TokenInfo) -> bool:
-        return t.type == token.NAME and t.string in ("class", "def")
+        return t.string in ("class", "def")
 
     it = (i for i, t in enumerate(pf.tokens) if starts_block(t))
-    blocks = [_make_block(pf, i, parse_errors) for i in it]
+    blocks = [_make_block(pf, i) for i in it]
 
     for i, parent in enumerate(blocks):
         for j in range(i + 1, len(blocks)):
@@ -47,17 +41,7 @@ def blocks(pf: PythonFile) -> BlocksResult:
         b.is_method = not b.is_class and bool(parents) and parents[0].is_class
 
     _add_full_names(blocks, [b for b in blocks if b.parent is None])
-    return BlocksResult(blocks, parse_errors)
-
-
-def _docstring(tokens: Sequence[TokenInfo], start: int) -> str:
-    for i in range(start + 1, len(tokens)):
-        tk = tokens[i]
-        if tk.type == token.STRING:
-            return tk.string
-        if tk.type not in EMPTY_TOKENS:
-            return ""
-    return ""
+    return blocks
 
 
 def _add_full_names(
@@ -78,36 +62,31 @@ def _add_full_names(
             _add_full_names(blocks, kids, b.full_name + ".")
 
 
-def _make_block(pf: PythonFile, begin: int, parse_errors: dict[str, str]) -> Block:
-    def next_token(start: int, token_type: int, error: str) -> int:
-        for i in range(start, len(pf.tokens)):
-            if pf.tokens[i].type == token_type:
-                return i
-        raise ParseError(pf.tokens[-1], error)
-
-    t = pf.tokens[begin]
-    category = Block.Category[t.string.upper()]
-    first_token = last_token = -1
+def _make_block(pf: PythonFile, begin: int) -> Block:
+    end = 0
+    name = ""
     docstring = ""
-    name = "(not found)"
-    try:
-        ni = next_token(begin + 1, token.NAME, "Definition but no name")
-        name = pf.tokens[ni].string
-        # TODO: this is wrong: some blocks have no indents
-        first_token = next_token(ni + 1, token.INDENT, "Definition but no indent")
-        last_token = pf.indent_to_dedent[first_token]
-        docstring = _docstring(pf.tokens, first_token)
-    except ParseError as e:
-        # This happens on the first line that `tokenizer` can't parse, and then
-        # all remaining lines are skipped
-        parse_errors[t.line] = " ".join(e.args)
 
+    for i in range(begin, len(pf.tokens)):
+        t = pf.tokens[i]
+        if not name and t.type == token.NAME:
+            name = t.string
+        elif not end and t.type == token.INDENT:
+            end = pf.indent_to_dedent[i] - 1
+        elif not end and t.string == "...":
+            end = i
+        elif t.type == token.STRING:
+            docstring = t.string
+            break
+        elif t.type not in EMPTY_TOKENS:
+            break
+
+    category = Block.Category[pf.tokens[begin].string.upper()]
     return Block(
         begin=begin,
         category=category,
         docstring=docstring,
-        first_token=first_token,
-        last_token=last_token,
+        last_token=end,
         name=name,
         tokens=pf.tokens,
     )

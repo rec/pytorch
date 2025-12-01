@@ -38,10 +38,6 @@ class Block:
     # The index of the very first token in the block (the "class" or "def" keyword)
     begin: int
 
-    # The index of the first INDENT token for this block:
-    # TODO: some blocks don't have INDENTs
-    first_token: int
-
     # The index of the last token for this block
     last_token: int
 

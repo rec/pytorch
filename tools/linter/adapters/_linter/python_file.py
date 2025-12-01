@@ -64,7 +64,7 @@ class PythonFile:
 
     @cached_property
     def tokens(self) -> list[TokenInfo]:
-        # Might raise IndentationError if the code is mal-indented
+        # Raises IndentationError on incorrectly indented code
         return list(generate_tokens(iter(self.lines).__next__))
 
     @cached_property
@@ -166,9 +166,7 @@ class PythonFile:
     def blocks(self) -> list[Block]:
         from .blocks import blocks
 
-        res = blocks(self)
-        self.parse_errors.update(res.parse_errors)
-        return res.blocks
+        return blocks(self)
 
     @cached_property
     def blocks_by_line_number(self) -> dict[int, Block]:
