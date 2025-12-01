@@ -133,7 +133,8 @@ class PythonFile:
         return dedents
 
     @cached_property
-    def errors(self) -> dict[str, str]:
+    def parse_errors(self) -> dict[str, str]:
+        # Ignored in existing linters, because parse errors are out of their domain
         return {}
 
     @cached_property
@@ -166,7 +167,7 @@ class PythonFile:
         from .blocks import blocks
 
         res = blocks(self)
-        self.errors.update(res.errors)
+        self.parse_errors.update(res.parse_errors)
         return res.blocks
 
     @cached_property

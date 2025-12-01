@@ -15,18 +15,18 @@ if TYPE_CHECKING:
 
 class BlocksResult(NamedTuple):
     blocks: list[Block]
-    errors: dict[str, str]
+    parse_errors: dict[str, str]
 
 
 def blocks(pf: PythonFile) -> BlocksResult:
     blocks: list[Block] = []
-    errors: dict[str, str] = {}
+    parse_errors: dict[str, str] = {}
 
     def starts_block(t: TokenInfo) -> bool:
         return t.type == token.NAME and t.string in ("class", "def")
 
     it = (i for i, t in enumerate(pf.tokens) if starts_block(t))
-    blocks = [_make_block(pf, i, errors) for i in it]
+    blocks = [_make_block(pf, i, parse_errors) for i in it]
 
     for i, parent in enumerate(blocks):
         for j in range(i + 1, len(blocks)):
@@ -47,7 +47,7 @@ def blocks(pf: PythonFile) -> BlocksResult:
         b.is_method = not b.is_class and bool(parents) and parents[0].is_class
 
     _add_full_names(blocks, [b for b in blocks if b.parent is None])
-    return BlocksResult(blocks, errors)
+    return BlocksResult(blocks, parse_errors)
 
 
 def _docstring(tokens: Sequence[TokenInfo], start: int) -> str:
@@ -78,7 +78,7 @@ def _add_full_names(
             _add_full_names(blocks, kids, b.full_name + ".")
 
 
-def _make_block(pf: PythonFile, begin: int, errors: dict[str, str]) -> Block:
+def _make_block(pf: PythonFile, begin: int, parse_errors: dict[str, str]) -> Block:
     def next_token(start: int, token_type: int, error: str) -> int:
         for i in range(start, len(pf.tokens)):
             if pf.tokens[i].type == token_type:
@@ -98,7 +98,9 @@ def _make_block(pf: PythonFile, begin: int, errors: dict[str, str]) -> Block:
         last_token = pf.indent_to_dedent[first_token]
         docstring = _docstring(pf.tokens, first_token)
     except ParseError as e:
-        errors[t.line] = " ".join(e.args)
+        # This happens on the first line that `tokenizer` can't parse, and then
+        # all remaining lines are skipped
+        parse_errors[t.line] = " ".join(e.args)
 
     return Block(
         begin=begin,
