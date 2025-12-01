@@ -19,7 +19,7 @@ class BlocksResult(NamedTuple):
 
 def blocks(tokens: Sequence[TokenInfo]) -> BlocksResult:
     blocks: list[Block] = []
-    indent_to_last_token = _make_indent_dict(tokens)
+    indent_to_last_token = _make_block_dict(tokens)
     errors: dict[str, str] = {}
 
     def starts_block(t: TokenInfo) -> bool:
@@ -50,7 +50,7 @@ def blocks(tokens: Sequence[TokenInfo]) -> BlocksResult:
     return BlocksResult(blocks, errors)
 
 
-def _make_indent_dict(tokens: Sequence[TokenInfo]) -> dict[int, int]:
+def _make_block_dict(tokens: Sequence[TokenInfo]) -> dict[int, int]:
     last_tokens = dict[int, int]()
     stack = list[int]()
 
