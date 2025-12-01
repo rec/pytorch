@@ -58,7 +58,7 @@ def _make_indent_dict(tokens: Sequence[TokenInfo]) -> dict[int, int]:
         if t.type == token.INDENT:
             stack.append(i)
         elif t.type == token.DEDENT:
-            last_tokens[stack.pop()] = i
+            last_tokens[stack.pop()] = i - 1
 
     return last_tokens
 
@@ -113,7 +113,7 @@ def _make_block(
         ni = next_token(begin + 1, token.NAME, "Definition but no name")
         name = tokens[ni].string
         indent = next_token(ni + 1, token.INDENT, "Definition but no indent")
-        last_token = indent_to_last_token[indent] - 1
+        last_token = indent_to_last_token[indent]
         docstring = _docstring(tokens, indent)
     except ParseError as e:
         errors[t.line] = " ".join(e.args)
