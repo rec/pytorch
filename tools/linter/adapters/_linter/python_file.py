@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 
 from . import EMPTY_TOKENS, NO_TOKEN, ParseError, ROOT
-from .blocks import blocks
 from .sets import LineWithSets
 
 
@@ -164,7 +163,9 @@ class PythonFile:
 
     @cached_property
     def blocks(self) -> list[Block]:
-        res = blocks(self.tokens)
+        from .blocks import blocks
+
+        res = blocks(self)
         self.errors.update(res.errors)
         return res.blocks
 

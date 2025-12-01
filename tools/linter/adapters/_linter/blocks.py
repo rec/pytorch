@@ -5,6 +5,7 @@ from typing import NamedTuple, TYPE_CHECKING
 
 from . import EMPTY_TOKENS, ParseError
 from .block import Block
+from .python_file import PythonFile
 
 
 if TYPE_CHECKING:
@@ -17,16 +18,15 @@ class BlocksResult(NamedTuple):
     errors: dict[str, str]
 
 
-def blocks(tokens: Sequence[TokenInfo]) -> BlocksResult:
+def blocks(pf: PythonFile) -> BlocksResult:
     blocks: list[Block] = []
-    indent_to_last_token = _indent_to_last_token(tokens)
     errors: dict[str, str] = {}
 
     def starts_block(t: TokenInfo) -> bool:
         return t.type == token.NAME and t.string in ("class", "def")
 
-    it = (i for i, t in enumerate(tokens) if starts_block(t))
-    blocks = [_make_block(tokens, i, indent_to_last_token, errors) for i in it]
+    it = (i for i, t in enumerate(pf.tokens) if starts_block(t))
+    blocks = [_make_block(pf, i, errors) for i in it]
 
     for i, parent in enumerate(blocks):
         for j in range(i + 1, len(blocks)):
@@ -48,21 +48,6 @@ def blocks(tokens: Sequence[TokenInfo]) -> BlocksResult:
 
     _add_full_names(blocks, [b for b in blocks if b.parent is None])
     return BlocksResult(blocks, errors)
-
-
-def _indent_to_last_token(tokens: Sequence[TokenInfo]) -> dict[int, int]:
-    stack: list[int] = []
-    d: dict[int, int] = {}
-
-    for i, t in enumerate(tokens):
-        if t.type == token.INDENT:
-            stack.append(i)
-        elif t.string == "...":
-            d[i] = i
-        elif t.type == token.DEDENT:
-            d[stack.pop()] = i - 1
-
-    return d
 
 
 def _docstring(tokens: Sequence[TokenInfo], start: int) -> str:
@@ -93,39 +78,34 @@ def _add_full_names(
             _add_full_names(blocks, kids, b.full_name + ".")
 
 
-def _make_block(
-    tokens: Sequence[TokenInfo],
-    begin: int,
-    indent_to_last_token: dict[int, int],
-    errors: dict[str, str],
-) -> Block:
+def _make_block(pf: PythonFile, begin: int, errors: dict[str, str]) -> Block:
     def next_token(start: int, token_type: int, error: str) -> int:
-        for i in range(start, len(tokens)):
-            if tokens[i].type == token_type:
+        for i in range(start, len(pf.tokens)):
+            if pf.tokens[i].type == token_type:
                 return i
-        raise ParseError(tokens[-1], error)
+        raise ParseError(pf.tokens[-1], error)
 
-    t = tokens[begin]
+    t = pf.tokens[begin]
     category = Block.Category[t.string.upper()]
-    indent = -1
-    last_token = -1
+    first_token = last_token = -1
     docstring = ""
     name = "(not found)"
     try:
         ni = next_token(begin + 1, token.NAME, "Definition but no name")
-        name = tokens[ni].string
-        indent = next_token(ni + 1, token.INDENT, "Definition but no indent")
-        last_token = indent_to_last_token[indent]
-        docstring = _docstring(tokens, indent)
+        name = pf.tokens[ni].string
+        # TODO: this is wrong: some blocks have no indents
+        first_token = next_token(ni + 1, token.INDENT, "Definition but no indent")
+        last_token = pf.indent_to_dedent[first_token]
+        docstring = _docstring(pf.tokens, first_token)
     except ParseError as e:
         errors[t.line] = " ".join(e.args)
 
     return Block(
         begin=begin,
         category=category,
-        last_token=last_token,
         docstring=docstring,
-        indent=indent,
+        first_token=first_token,
+        last_token=last_token,
         name=name,
-        tokens=tokens,
+        tokens=pf.tokens,
     )
