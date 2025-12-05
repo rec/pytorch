@@ -12,7 +12,7 @@ from builtins import (  # noqa: F401
     str as _str,
 )
 from collections.abc import Sequence
-from typing import Any, IO, TYPE_CHECKING, TypeAlias, Union
+from typing import Any, get_args, IO, TYPE_CHECKING, TypeAlias, Union
 from typing_extensions import Self
 
 # `as` imports have better static analysis support than assignment `ExposedType: TypeAlias = HiddenType`
@@ -62,9 +62,10 @@ PySymType: TypeAlias = SymInt | SymFloat | SymBool
 
 # Meta-type for "numeric" things; matches our docs
 Number: TypeAlias = int | float | bool
+
 # tuple for isinstance(x, Number) checks.
-# FIXME: refactor once python 3.9 support is dropped.
-_Number = (int, float, bool)
+# FIXME: refactor once Dynamo can trace isinstance(.
+_Number = get_args(Number)
 
 FileLike: TypeAlias = str | os.PathLike[str] | IO[bytes]
 
