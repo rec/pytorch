@@ -20,7 +20,7 @@ else:
     from _linter import FileLinter, is_public, LintResult, PythonFile
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Collection, Iterator, Sequence
 
 
 DESCRIPTION = """`missing_type_linter` is a lintrunner linter which uses pyrefly to detect
@@ -145,7 +145,7 @@ class MissingTypeLinter(FileLinter):
         return self.args.write_grandfather or not self.args.grandfather.exists()
 
     @cached_property
-    def type_results(self) -> dict[Path, Any]:
+    def type_results(self) -> dict[str, Any]:
         """Results from calling `pyrefly` and un-JSONing it, then making names unique"""
         if self.args.type_result:
             text = self.args.type_result.read_text()
@@ -157,12 +157,12 @@ class MissingTypeLinter(FileLinter):
         type_results = json.loads(text)
         name_count: dict[str, int] = {}
 
-        for file, contents in type_results.items():
+        for contents in type_results.values():
             for f in contents["functions"]:
                 name = f["name"]
                 if count := name_count.get(name, 0):
                     f["name"] = f"{name}[{count + 2}]"
-                name_count[name] = count + 1
+                name_count[name] = count + 1  # pyrefly: ignore[unbound-name]
 
         return type_results
 
@@ -170,38 +170,57 @@ class MissingTypeLinter(FileLinter):
         Number: TypeAlias = int | float
         report: dict[str, Number] = {}
 
-        def count(name: str, x: Number | Sequence[Any]) -> None:
+        def count(name: str, x: Number | Collection[Any]) -> None:
             report[name] = x if isinstance(x, Number) else len(x)
 
         def percent(name: str, base: str) -> None:
             count(name + "_percent", round(100 * report[name] / report[base], 4))
 
-        def nonempty(name: str, annotations: Sequence[Annotation]) -> None:
+        def nonempty(name: str, annotations: Collection[Annotation]) -> None:
             count(name, sum(bool(a.annotation) for a in annotations))
 
         params = [a for a in self.annotations if a.param_name]
         returns = [a for a in self.annotations if not a.param_name]
+
+        assert len({r.pyrefly_name for r in returns}) == len(returns)
+        assert len({r.pyrefly_name for r in params}) < len(params)
+        assert len({r.pyrefly_name for r in params}) <= len(returns), (
+            len({r.pyrefly_name for r in params}), len(returns)
+        )
+
+        r = {r.pyrefly_name for r in returns}
+        p = {r.pyrefly_name for r in params}
+        print(len(r - p), len(p - r), len(p | r), len(p & r))
+        s = lambda x: (len(x), sorted(x)[:8])
+
+        # print(s(r - p), s(p - r), s(p | r), s(p & r), sep="\n")
+
+        print(*sorted(r), "", "-----", "", *sorted(p), sep="\n")
+
+        assert not (r - p or p - r)
+        assert len({r.pyrefly_name for r in returns + params}) == len(returns), (
+            len({r.pyrefly_name for r in returns + params}), len(returns)
+        )
 
         count("files", {a.python_file.path for a in self.annotations})
         count("annotations", self.annotations)
         count("params", params)
         count("functions", returns)
 
-        by_grandfather: dict[str, list[Annotation]] = {}
+        by_pyrefly_name: dict[str, list[Annotation]] = {}
         for a in self.annotations:
-            grandfather = a.grandfather_name.split("(")[0]
-            by_grandfather.setdefault(grandfather, []).append(a)
+            by_pyrefly_name.setdefault(a.pyrefly_name, []).append(a)
 
-        if len(by_grandfather) != len(returns):
+        if len(by_pyrefly_name) != len(returns):
             print(len(returns), len({r.pyrefly_name for r in returns}))
-        assert len(by_grandfather) == len(returns), (len(by_grandfather), len(returns))
+        assert len(by_pyrefly_name) == len(returns), (len(by_pyrefly_name), len(returns))
 
         full = "fully_annotated_functions"  # Our metric
         part = "partially_annotated_functions"
         un = "unannotated_functions"
         report.update({full: 0, part: 0, un: 0})
 
-        for v in by_grandfather.values():
+        for v in by_pyrefly_name.values():
             annotations = [a.annotation for a in v]
             category = full if all(annotations) else part if any(annotations) else un
             report[category] += 1
@@ -262,7 +281,7 @@ class Annotation:
             param_name = d["name"]
 
         return Annotation(
-            annotation=annotation,
+            annotation=annotation,  # pyrefly: ignore[unbound-name]
             location=d["location"],
             param_name=param_name,
             pyrefly_name=pyrefly_name,
@@ -292,9 +311,11 @@ class Annotation:
 
     @cached_property
     def needs_annotation(self) -> bool:
+        name = self.pyrefly_name
         return (
             self.param_name not in ("self", "cls")
             and (self.param_name is None or is_public(self.param_name))
+            and (bool(self.param_name) or not name.split(".")[-1].startswith("__"))
             and is_public(self.pyrefly_name)
             and (
                 not self.use_block_name
